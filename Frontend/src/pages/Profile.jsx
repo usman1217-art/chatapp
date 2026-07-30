@@ -1,0 +1,401 @@
+import { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom"; 
+import { useAuth } from "../context/AuthContext";
+
+function Profile() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", about: "" });
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Custom Confirmation Modal state
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: "", onConfirm: null });
+  const [statusMessage, setStatusMessage] = useState("");
+
+  const fileInputRef = useRef(null);
+  const navigate = useNavigate();
+  const { setUser: setGlobalUser } = useAuth(); 
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("accessToken"); 
+        const response = await fetch("http://localhost:3000/api/users/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data);
+          setEditForm({ name: data.name, about: data.about || "" });
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const triggerToast = (msg) => {
+    setStatusMessage(msg);
+    setTimeout(() => setStatusMessage(""), 3000);
+  };
+
+  const handleCopyId = () => {
+    if (user?.userId) {
+      navigator.clipboard.writeText(user.userId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handlePhotoClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const localImageUrl = URL.createObjectURL(file);
+    setUser((prev) => ({ ...prev, avatar: localImageUrl }));
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await fetch("http://localhost:3000/api/users/profile-image", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        setUser(updatedUser);
+        triggerToast("Avatar updated successfully!");
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+    }
+  };
+
+  const handleDeletePhoto = (e) => {
+    e.stopPropagation(); 
+    
+    setConfirmModal({
+      show: true,
+      message: "Are you sure you want to remove your profile picture?",
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem("accessToken");
+          const response = await fetch("http://localhost:3000/api/users/profile", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ avatar: "" }),
+          });
+
+          if (response.ok) {
+            const updatedUser = await response.json();
+            setUser(updatedUser);
+            triggerToast("Profile picture removed.");
+          }
+        } catch (error) {
+          console.error("Error removing profile image:", error);
+        }
+        setConfirmModal({ show: false, message: "", onConfirm: null });
+      }
+    });
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await fetch("http://localhost:3000/api/users/profile", {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        setUser(updatedUser);
+        setIsEditing(false);
+        triggerToast("Profile updated successfully!");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setConfirmModal({
+      show: true,
+      message: "Are you sure you want to sign out?",
+      onConfirm: () => {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("token");
+        if (setGlobalUser) setGlobalUser(null);
+        setConfirmModal({ show: false, message: "", onConfirm: null });
+        navigate("/login");
+      }
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex justify-center items-center h-screen bg-transparent">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex-1 flex justify-center items-center h-screen text-slate-700 dark:text-slate-300 font-medium">
+        Unable to load profile data.
+      </div>
+    );
+  }
+
+  const displayAvatar = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=4f46e5&color=fff&size=256`;
+
+  return (
+    <div className="flex-1 flex flex-col items-center pt-6 pb-10 h-screen overflow-y-auto px-4 relative">
+      
+      {/* Toast Feedback */}
+      {statusMessage && (
+        <div className="absolute top-4 z-40 px-4 py-2 bg-indigo-600 border border-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg animate-fade-in">
+          {statusMessage}
+        </div>
+      )}
+
+      {/* Custom Confirmation Modal Overlay */}
+      {confirmModal.show && (
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl max-w-sm w-full shadow-xl">
+            <h4 className="text-slate-800 dark:text-slate-100 font-bold text-base mb-3">Confirm Action</h4>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{confirmModal.message}</p>
+            <div className="flex justify-end gap-2">
+              <button 
+                onClick={() => setConfirmModal({ show: false, message: "", onConfirm: null })}
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmModal.onConfirm}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="w-full max-w-md">
+        
+        {/* Navigation / Header Row */}
+        <div className="flex justify-between items-center mb-6 px-1">
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors group"
+          >
+            <svg className="w-5 h-5 transform group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Chats
+          </Link>
+
+          {!isEditing ? (
+            <button 
+              onClick={() => setIsEditing(true)}
+              className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-100 dark:hover:bg-slate-700 transition-all shadow-sm cursor-pointer"
+            >
+              Edit Profile
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button 
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditForm({ name: user.name, about: user.about || "" });
+                }}
+                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveProfile}
+                className="text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-1.5 rounded-lg shadow-sm transition-all flex items-center cursor-pointer"
+                disabled={isSaving}
+              >
+                {isSaving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Profile Settings Card */}
+        <div className="w-full p-8 rounded-2xl shadow-md border border-slate-300/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/75 backdrop-blur-md transition-all duration-300">
+          
+          <h2 className="text-2xl font-black text-center text-slate-800 dark:text-slate-100 mb-8 tracking-tight">
+            Profile Settings
+          </h2>
+
+          {/* Profile Photo Section */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="relative group w-32 h-32">
+              <div 
+                className="w-full h-full rounded-full overflow-hidden border-4 border-white dark:border-slate-800 shadow-md cursor-pointer transition-all hover:scale-[1.02]"
+                onClick={handlePhotoClick}
+              >
+                <img 
+                  src={displayAvatar} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-60 bg-white"
+                />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 transition-opacity duration-300 rounded-full">
+                  <svg className="w-8 h-8 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+              </div>
+
+              {user.avatar && (
+                <button
+                  onClick={handleDeletePhoto}
+                  className="absolute bottom-0 right-0 p-2 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md hover:scale-110 transition-all border-2 border-white dark:border-slate-900 cursor-pointer z-10"
+                  title="Remove Avatar"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            <p className="mt-3 text-xs text-indigo-600 dark:text-indigo-400 font-bold tracking-wide uppercase cursor-pointer hover:underline" onClick={handlePhotoClick}>
+              Change Avatar
+            </p>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              accept="image/*" 
+              className="hidden" 
+            />
+          </div>
+
+          {/* Form Fields */}
+          <div className="space-y-6">
+            
+            {/* Display Name */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Display Name
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-indigo-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-medium focus:border-indigo-500 dark:focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-inner"
+                />
+              ) : (
+                <div className="w-full px-4 py-3 rounded-xl bg-slate-50/90 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 font-semibold shadow-sm">
+                  {user.name}
+                </div>
+              )}
+            </div>
+
+            {/* About */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                About
+              </label>
+              {isEditing ? (
+                <textarea
+                  value={editForm.about}
+                  onChange={(e) => setEditForm({ ...editForm, about: e.target.value })}
+                  rows="3"
+                  maxLength="150"
+                  className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-indigo-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-medium focus:border-indigo-500 dark:focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-inner resize-none"
+                />
+              ) : (
+                <div className="w-full px-4 py-3 rounded-xl bg-slate-50/90 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 font-medium min-h-[88px] whitespace-pre-wrap break-words shadow-sm">
+                  {user.about || <span className="text-slate-400 dark:text-slate-500 italic">No description details provided.</span>}
+                </div>
+              )}
+            </div>
+
+            {/* Email Address */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Email Address
+              </label>
+              <div className="w-full px-4 py-3 rounded-xl bg-slate-200/40 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed select-none">
+                {user.email}
+              </div>
+            </div>
+
+            {/* User ID */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                User ID
+              </label>
+              <div className="flex items-center shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                <div className="flex-1 px-4 py-3 bg-slate-50/90 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300 font-mono text-sm truncate select-all">
+                  {user.userId}
+                </div>
+                <button
+                  onClick={handleCopyId}
+                  className={`px-5 py-3 text-sm font-bold tracking-wide transition-all duration-200 flex items-center justify-center min-w-[110px] select-none cursor-pointer ${
+                    copied 
+                      ? "bg-green-600 text-white" 
+                      : "bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white"
+                  }`}
+                >
+                  {copied ? "Copied!" : "Copy ID"}
+                </button>
+              </div>
+            </div>
+
+            <hr className="border-slate-200 dark:border-slate-800 my-6" />
+            
+            <button
+              onClick={handleLogout}
+              className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-500/10 dark:hover:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-800/30"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign Out
+            </button>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Profile;
