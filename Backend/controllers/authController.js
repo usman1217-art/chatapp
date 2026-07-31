@@ -153,12 +153,14 @@ const login = async (req, res) => {
 
     await user.save();
 
+    const isProduction = process.env.NODE_ENV === "production";
+
     // Send refresh token in cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false, // true in production with HTTPS
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      secure: isProduction, 
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
     // Remove sensitive fields
