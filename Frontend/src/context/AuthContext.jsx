@@ -16,6 +16,8 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
+      // Optional optimization: If you store a flag in localStorage upon login, 
+      // you can skip calling /refresh entirely when logged out!
       const tokenRes = await refreshToken();
       const token = tokenRes.data.accessToken;
       localStorage.setItem("accessToken", token);
@@ -23,6 +25,7 @@ export const AuthProvider = ({ children }) => {
       const userRes = await getCurrentUser();
       setUser(userRes.data);
     } catch (err) {
+      // Expected if logged out—silently clear everything without throwing errors
       localStorage.removeItem("accessToken");
       setUser(null);
     } finally {
@@ -47,7 +50,6 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // The crucial loading screen to prevent premature redirects on refresh
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[#0a192f]">
