@@ -12,7 +12,7 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // Starts true on refresh
+  const [loading, setLoading] = useState(true);
 
   const checkAuth = async () => {
     try {
@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("accessToken");
       setUser(null);
     } finally {
-      setLoading(false); // Finishes loading
+      setLoading(false);
     }
   };
 
@@ -47,9 +47,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // --- THE FIX ---
-  // If we are still checking the token on refresh, show a loading spinner
-  // instead of rendering the protected routes which would kick you out.
+  // The crucial loading screen to prevent premature redirects on refresh
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[#0a192f]">
@@ -58,7 +56,6 @@ export const AuthProvider = ({ children }) => {
     );
   }
 
-  // Once loading is false, safely render the application routes
   return (
     <AuthContext.Provider
       value={{

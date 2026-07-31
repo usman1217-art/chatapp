@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
+import { useSocket } from "../../context/SocketContext";
 
 function MessageBubble({ message }) {
   const { user } = useAuth();
-  const { setMessages } = useChat();
+  const { selectedChat, setMessages } = useChat();
+  const { socket } = useSocket(); // Grab the socket connection
   
   const [isHovered, setIsHovered] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -13,11 +15,9 @@ function MessageBubble({ message }) {
   const senderId = message.sender?._id || message.sender;
   const own = senderId === user?._id;
 
-  // Backend rule: Delete for everyone is allowed if sent by you and within 15 minutes
   const canDeleteForEveryone =
     own && (Date.now() - new Date(message.createdAt).getTime()) / 1000 / 60 <= 15;
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -61,6 +61,7 @@ function MessageBubble({ message }) {
       });
 
       if (res.ok) {
+        // Update your own screen
         setMessages((prev) =>
           prev.map((m) =>
             m._id === message._id
@@ -68,6 +69,17 @@ function MessageBubble({ message }) {
               : m
           )
         );
+
+        // Tell the other person's screen to update in real-time
+        if (socket && selectedChat) {
+          const receiver = selectedChat.participants.find(p => (p._id || p) !== user._id);
+          if (receiver) {
+            socket.emit("deleteMessage", { 
+              messageId: message._id, 
+              receiverId: receiver._id || receiver 
+            });
+          }
+        }
       }
     } catch (err) {
       console.error("Error deleting for everyone:", err);
@@ -90,7 +102,6 @@ function MessageBubble({ message }) {
             : "bg-slate-800 border border-slate-700/80 text-slate-100 rounded-bl-sm"
         }`}
       >
-        {/* Three Dots Button (Shows on Hover) */}
         {!message.deletedForEveryone && (isHovered || showMenu) && (
           <div className="absolute top-2 right-2 z-30">
             <button
@@ -106,7 +117,6 @@ function MessageBubble({ message }) {
               </svg>
             </button>
 
-            {/* Popup Context Menu with both delete options */}
             {showMenu && (
               <div 
                 ref={menuRef}
@@ -138,7 +148,6 @@ function MessageBubble({ message }) {
           </div>
         )}
 
-        {/* Message Content & Attachments */}
         {message.image && !message.deletedForEveryone && (
           <img
             src={message.image}
@@ -151,7 +160,6 @@ function MessageBubble({ message }) {
           {message.deletedForEveryone ? "This message was deleted" : message.text}
         </p>
 
-        {/* Timestamp */}
         <span
           className={`text-[10px] block mt-1.5 self-end ${
             own ? "text-indigo-200" : "text-slate-400"
