@@ -386,28 +386,22 @@ const forgotPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
-
     const { password } = req.body;
 
     if (!password) {
-      return res.status(400).json({
-        message: "Password is required",
-      });
+      return res.status(400).json({ message: "Password is required" });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({
-        message: "Password must be at least 6 characters",
-      });
-    }
+    // 1. MUST HASH THE INCOMING TOKEN TO MATCH THE DATABASE!
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
 
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
+    // 2. Query using the hashed token and check expiration
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
-      resetPasswordExpires: {
-        $gt: Date.now(),
-      },
+      resetPasswordExpires: { $gt: Date.now() },
     });
 
     if (!user) {
@@ -416,16 +410,10 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    user.password = hashedPassword;
-
-    user.resetPasswordToken = "";
-
+    user.password = await bcrypt.hash(password, 10);
+    user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
-
-    // Logout all devices
-    user.refreshTokens = [];
+    user.refreshTokens = []; // Logout all devices
 
     await user.save();
 
@@ -433,9 +421,8 @@ const resetPassword = async (req, res) => {
       message: "Password reset successful. Please login again.",
     });
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
+    console.log(err);
+    res.status(500).json({ message: err.message });
   }
 };
 
