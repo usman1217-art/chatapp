@@ -11,7 +11,7 @@ function FriendRequestsTab() {
   const fetchRequests = async () => {
     try {
       const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/users/friend-requests", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users/friend-requests`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -26,7 +26,7 @@ function FriendRequestsTab() {
   const handleAccept = async (senderId) => {
     try {
       const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/users/friend-request/accept", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users/friend-request/accept`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -46,7 +46,7 @@ function FriendRequestsTab() {
   const handleDelete = async (senderId) => {
     try {
       const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/api/users/friend-request/${senderId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users/friend-request/${senderId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

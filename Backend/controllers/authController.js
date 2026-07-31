@@ -69,8 +69,7 @@ const register = async (req, res) => {
         Date.now() + 24 * 60 * 60 * 1000,
     });
 
-    const verifyLink =
-  `http://localhost:5173/verify-email/${verificationToken}`;
+    const verifyLink = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,

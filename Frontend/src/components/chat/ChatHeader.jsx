@@ -30,7 +30,7 @@ function ChatHeader() {
 
       console.log("Sending delete request for chat ID:", chatId);
 
-      const res = await fetch(`http://localhost:3000/api/chats/${chatId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/chats/${chatId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

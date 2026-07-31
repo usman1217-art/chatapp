@@ -31,8 +31,7 @@ function UserSearch({ close }) {
 
     try {
       const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      
-      const response = await fetch(`http://localhost:3000/api/users/search?userId=${encodeURIComponent(searchId.trim())}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/search?userId=${encodeURIComponent(searchId.trim())}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -59,7 +58,7 @@ function UserSearch({ close }) {
 
     try {
       const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      const response = await fetch("http://localhost:3000/api/users/friend-request", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/friend-request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -89,7 +88,7 @@ function UserSearch({ close }) {
     try {
       const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
       
-      const response = await fetch("http://localhost:3000/api/chats", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/chats`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -97,7 +96,6 @@ function UserSearch({ close }) {
         },
         body: JSON.stringify({ receiverId: result._id }), 
       });
-
       if (response.ok) {
         const chatData = await response.json();
         

@@ -12,7 +12,7 @@ function FriendsTab() {
   const fetchFriends = async () => {
     try {
       const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/users/friends", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users/friends`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -25,7 +25,7 @@ function FriendsTab() {
   const handleUnfriend = async (friendId) => {
     try {
       const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/api/users/friends/${friendId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users/friends/${friendId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -50,8 +50,7 @@ function FriendsTab() {
         setSelectedChat(existingChat);
         return;
       }
-
-      const res = await fetch("http://localhost:3000/api/chats", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/chats`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

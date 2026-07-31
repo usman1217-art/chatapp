@@ -23,7 +23,7 @@ function Profile() {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("accessToken"); 
-        const response = await fetch("http://localhost:3000/api/users/profile", {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/users/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -70,7 +70,7 @@ function Profile() {
 
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await fetch("http://localhost:3000/api/users/profile-image", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/profile-image`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -95,7 +95,7 @@ function Profile() {
       onConfirm: async () => {
         try {
           const token = localStorage.getItem("accessToken");
-          const response = await fetch("http://localhost:3000/api/users/profile", {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/users/profile`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -121,7 +121,7 @@ function Profile() {
     setIsSaving(true);
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await fetch("http://localhost:3000/api/users/profile", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/profile`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",

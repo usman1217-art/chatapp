@@ -31,7 +31,7 @@ function MessageBubble({ message }) {
   const handleDeleteForMe = async () => {
     try {
       const token = localStorage.getItem("accessToken");
-      const res = await fetch("http://localhost:3000/api/messages/delete-me", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/messages/delete-me`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -51,7 +51,7 @@ function MessageBubble({ message }) {
   const handleDeleteForEveryone = async () => {
     try {
       const token = localStorage.getItem("accessToken");
-      const res = await fetch("http://localhost:3000/api/messages/delete-everyone", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/messages/delete-everyone`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
