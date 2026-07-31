@@ -1,8 +1,9 @@
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
-const transporter = require("../config/email");
+// const transporter = require("../config/email");
 const jwt = require("jsonwebtoken");
+const sendEmail = require("../utils/sendEmail");
 const { OAuth2Client } = require("google-auth-library");
 
 const {
@@ -14,7 +15,6 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const register = async (req, res) => {
   try {
-
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
@@ -36,7 +36,6 @@ const register = async (req, res) => {
     let userId;
 
     while (true) {
-
       userId =
         "CHAT-" +
         Math.random()
@@ -47,7 +46,6 @@ const register = async (req, res) => {
       const exists = await User.findOne({ userId });
 
       if (!exists) break;
-
     }
 
     // Generate verification token
@@ -71,19 +69,14 @@ const register = async (req, res) => {
 
     const verifyLink = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    // REPLACED TRANSPORTER WITH RESEND:
+    await sendEmail({
       to: email,
       subject: "Verify your email",
       html: `
         <h2>Welcome to Chat App</h2>
-
         <p>Please verify your email.</p>
-
-        <a href="${verifyLink}">
-          Verify Email
-        </a>
-
+        <a href="${verifyLink}">Verify Email</a>
         <p>This link expires in 24 hours.</p>
       `,
     });
@@ -94,13 +87,10 @@ const register = async (req, res) => {
     });
 
   } catch (err) {
-
     console.log(err);
-
     res.status(500).json({
       message: err.message,
     });
-
   }
 };
 // ================= LOGIN =================
@@ -369,21 +359,14 @@ const forgotPassword = async (req, res) => {
 
     const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    // REPLACED TRANSPORTER WITH RESEND:
+    await sendEmail({
       to: user.email,
       subject: "Reset Your Password",
       html: `
         <h2>Password Reset</h2>
-
         <p>You requested to reset your password.</p>
-
-        <p>
-          <a href="${resetLink}">
-            Click here to reset your password
-          </a>
-        </p>
-
+        <p><a href="${resetLink}">Click here to reset your password</a></p>
         <p>This link expires in 15 minutes.</p>
       `,
     });
@@ -393,6 +376,7 @@ const forgotPassword = async (req, res) => {
         "If an account exists with this email, a reset link has been sent.",
     });
   } catch (err) {
+    console.log(err);
     res.status(500).json({
       message: err.message,
     });
