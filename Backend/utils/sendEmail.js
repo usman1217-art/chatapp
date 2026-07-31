@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const sendEmail = async ({ to, subject, html }) => {
   try {
     const data = await resend.emails.send({
-      from: "Chat App <onboarding@resend.dev>",
+      from: "Usman Arif ua031860@gmail.com", // Or your verified domain
       to: [to],
       subject: subject,
       html: html,
