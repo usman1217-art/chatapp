@@ -6,10 +6,11 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  // ADD THESE TIMEOUTS SO IT FAILS FAST INSTEAD OF HANGING:
-  connectionTimeout: 10000, // 10 seconds
-  greetingTimeout: 10000,   // 10 seconds
-  socketTimeout: 10000,     // 10 seconds
+  // FORCE IPV4 TO FIX RAILWAY ENETUNREACH ERROR:
+  family: 4, 
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 });
 
 module.exports = transporter;
