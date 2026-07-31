@@ -22,4 +22,4 @@ export const logoutUser = () =>
   api.post("/auth/logout");
 
 export const refreshToken = () =>
-  api.post("/auth/refresh");
+  api.post("/auth/refresh", {}, { withCredentials: true });
