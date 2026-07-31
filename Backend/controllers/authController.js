@@ -214,13 +214,14 @@ const googleLogin = async (req, res) => {
 
     await user.save();
 
+    const isProduction = process.env.NODE_ENV === "production";
+
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: true,      // REQUIRED for cross-domain cookies
-      sameSite: "none",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      secure: isProduction,             // Only true in production (Vercel/Railway)
+      sameSite: isProduction ? "none" : "lax", // 'lax' for local testing
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
     });
-
     const userResponse = await User.findById(user._id).select(
       "-password -refreshToken"
     );
