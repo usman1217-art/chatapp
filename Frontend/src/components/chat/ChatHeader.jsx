@@ -39,8 +39,7 @@ function ChatHeader() {
       });
 
       const data = await res.json();
-      console.log("Delete response status:", res.status, data);
-
+      
       if (res.ok) {
         setChats((prev) => prev.filter((chat) => (chat._id || chat.id) !== chatId));
         setSelectedChat(null);
@@ -53,10 +52,22 @@ function ChatHeader() {
   };
 
   return (
-    <div className="border-b border-slate-800 bg-[#0a192f]/90 backdrop-blur-md p-4 flex items-center justify-between transition-colors duration-300 z-10 shadow-sm shrink-0">
+    <div className="border-b border-slate-800 bg-[#0a192f]/90 backdrop-blur-md p-3 md:p-4 flex items-center justify-between transition-colors duration-300 z-10 shadow-sm shrink-0">
       
-      {/* Left side: Avatar and Status */}
-      <div className="flex items-center gap-4">
+      {/* Left side: Back Arrow, Avatar, and Status */}
+      <div className="flex items-center gap-2 md:gap-4">
+        
+        {/* Mobile Back Arrow (Hidden on Desktop) */}
+        <button
+          onClick={() => setSelectedChat(null)}
+          className="md:hidden p-2 -ml-2 text-slate-400 hover:text-white transition-colors cursor-pointer rounded-full active:bg-slate-800"
+          title="Back to Chats"
+        >
+          <svg className="w-6 h-6 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
         <div className="relative">
           <img
             src={
@@ -66,21 +77,21 @@ function ChatHeader() {
               )}&background=4f46e5&color=fff`
             }
             alt={otherUser?.name}
-            className="w-12 h-12 rounded-full object-cover border-2 border-slate-700 shadow-sm bg-slate-800"
+            className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-slate-700 shadow-sm bg-slate-800"
           />
           
           {isOnline && (
-            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-[#0a192f] rounded-full"></span>
+            <span className="absolute bottom-0 right-0 w-3 h-3 md:w-3.5 md:h-3.5 bg-green-500 border-2 border-[#0a192f] rounded-full"></span>
           )}
         </div>
 
         <div className="flex flex-col justify-center">
-          <h2 className="font-bold text-lg text-slate-100 leading-tight">
+          <h2 className="font-bold text-base md:text-lg text-slate-100 leading-tight">
             {otherUser?.name || "User"}
           </h2>
           
           <p
-            className={`text-sm font-medium mt-0.5 transition-colors flex items-center gap-1 ${
+            className={`text-xs md:text-sm font-medium mt-0.5 transition-colors flex items-center gap-1 ${
               isTyping
                 ? "text-indigo-400"
                 : isOnline
@@ -107,11 +118,11 @@ function ChatHeader() {
       </div>
 
       {/* Right side: Action Buttons */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 md:gap-2">
         {/* Delete Chat Button */}
         <button
           onClick={handleDeleteChat}
-          className="p-2.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all duration-200 cursor-pointer"
+          className="p-2 md:p-2.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all duration-200 cursor-pointer"
           title="Delete Chat"
         >
           <svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,10 +130,10 @@ function ChatHeader() {
           </svg>
         </button>
 
-        {/* Close Chat Window Button */}
+        {/* Close Chat Window Button (Hidden on Mobile as Back Arrow handles this) */}
         <button
           onClick={() => setSelectedChat(null)}
-          className="p-2.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-full transition-all duration-200 cursor-pointer"
+          className="hidden md:block p-2.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-full transition-all duration-200 cursor-pointer"
           title="Close Chat"
         >
           <svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">

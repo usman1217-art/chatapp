@@ -6,9 +6,10 @@ import { useChat } from "../../context/ChatContext";
 function ChatWindow() {
   const { selectedChat } = useChat();
 
+  // If no chat is selected, hide the entire window on mobile screens (< md)
   if (!selectedChat) {
     return (
-      <div className="flex-1 flex flex-col justify-center items-center bg-[#0a192f] transition-colors duration-300 p-6 text-center">
+      <div className="hidden md:flex flex-1 flex-col justify-center items-center bg-[#0a192f] transition-colors duration-300 p-6 text-center">
         {/* Decorative Chat Icon Container */}
         <div className="w-24 h-24 mb-6 rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center shadow-md">
           <svg 
@@ -32,7 +33,7 @@ function ChatWindow() {
   }
 
   return (
-    <div className="flex flex-col flex-1 h-screen bg-[#0a192f] overflow-hidden">
+    <div className="flex flex-col flex-1 w-full h-[100dvh] md:h-screen bg-[#0a192f] overflow-hidden">
       <ChatHeader />
       <MessageList />
       <MessageInput />
