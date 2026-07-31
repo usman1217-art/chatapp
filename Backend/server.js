@@ -25,18 +25,11 @@ const rateLimit = require("express-rate-limit");
 connectDB();
 
 const limiter = rateLimit({
-
     windowMs: 15 * 60 * 1000,
-
     max: 100,
-
     message: {
-
-        message:
-        "Too many requests. Try again later."
-
+        message: "Too many requests. Try again later."
     }
-
 });
 
 const app = express();
@@ -45,20 +38,21 @@ app.use(compression());
 app.use("/api/auth", limiter);
 
 
+// --- UPDATED CORS CONFIGURATION ---
 app.use(cors({
-
-    origin: process.env.FRONTEND_URL,
-
+    origin: [
+        process.env.FRONTEND_URL, // Your deployed Vercel URL
+        "http://localhost:5173"   // Your local development URL
+    ],
     credentials: true,
-
 }));
+// ----------------------------------
 
 app.use(express.json());
 app.use(cookieParser());
 app.set("trust proxy", 1);
 
 app.use("/api/auth", authRoutes);
-
 app.use("/api/chats", chatRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
