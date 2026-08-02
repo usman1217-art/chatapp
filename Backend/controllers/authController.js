@@ -230,18 +230,20 @@ const googleLogin = async (req, res) => {
 };
 
 // ================= REFRESH TOKEN =================
+// ================= REFRESH TOKEN =================
 const refreshAccessToken = async (req, res) => {
   try {
-    const refreshToken = req.cookies.refreshToken;
+    const oldRefreshToken = req.cookies.refreshToken;
 
-    if (!refreshToken) {
+    if (!oldRefreshToken) {
       return res.status(401).json({
         message: "Refresh token missing",
       });
     }
 
+    // Verify token
     const decoded = jwt.verify(
-      refreshToken,
+      oldRefreshToken,
       process.env.JWT_REFRESH_SECRET
     );
 
@@ -253,31 +255,45 @@ const refreshAccessToken = async (req, res) => {
       });
     }
 
-    const tokenExists = user.refreshTokens.some(
-      (item) => item.token === refreshToken
+    // Check if old refresh token exists in user's active sessions
+    const tokenIndex = user.refreshTokens.findIndex(
+      (item) => item.token === oldRefreshToken
     );
 
-    if (!tokenExists) {
+    if (tokenIndex === -1) {
       return res.status(401).json({
         message: "Invalid refresh token",
       });
     }
 
+    // Generate NEW token pair (Token Rotation)
     const accessToken = generateAccessToken(user._id);
+    const newRefreshToken = generateRefreshToken(user._id);
+
+    // Replace the old refresh token with the new one in the database array
+    user.refreshTokens[tokenIndex].token = newRefreshToken;
+    await user.save();
+
+    const isProduction = process.env.NODE_ENV === "production";
+
+    // Send the fresh refresh token back in the cookie
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days extension
+    });
 
     res.json({
       accessToken,
     });
 
   } catch (err) {
-
     res.status(401).json({
       message: "Invalid or expired refresh token",
     });
-
   }
 };
-
 // ================= LOGOUT =================
 
 const logout = async (req, res) => {
