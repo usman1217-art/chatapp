@@ -150,7 +150,8 @@ const login = async (req, res) => {
       httpOnly: true,
       secure: isProduction, 
       sameSite: isProduction ? "none" : "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     // Remove sensitive fields
@@ -210,8 +211,9 @@ const googleLogin = async (req, res) => {
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: isProduction,             // Only true in production (Vercel/Railway)
-      sameSite: isProduction ? "none" : "lax", // 'lax' for local testing
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, 
     });
     const userResponse = await User.findById(user._id).select(
@@ -281,7 +283,8 @@ const refreshAccessToken = async (req, res) => {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days extension
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     res.json({
