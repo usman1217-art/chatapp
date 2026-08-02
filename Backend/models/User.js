@@ -39,8 +39,8 @@ const userSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Incoming requests
-    sentRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],     // Outgoing requests
+    friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    sentRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     isGoogleUser: {
       type: Boolean,
       default: false,
@@ -58,6 +58,17 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // ADD THESE TWO LINES HERE:
+    resetPasswordToken: {
+      type: String,
+      default: "",
+    },
+
+    resetPasswordExpires: {
+      type: Date,
+    },
+    // -------------------------
 
     refreshTokens: [
       {
