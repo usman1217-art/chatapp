@@ -15,9 +15,15 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const checkAuth = async () => {
+    const savedToken = localStorage.getItem("accessToken");
+    
+    // Optimization: If no token exists at all, skip the refresh call immediately
+    if (!savedToken) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Optional optimization: If you store a flag in localStorage upon login, 
-      // you can skip calling /refresh entirely when logged out!
       const tokenRes = await refreshToken();
       const token = tokenRes.data.accessToken;
       localStorage.setItem("accessToken", token);
@@ -25,7 +31,6 @@ export const AuthProvider = ({ children }) => {
       const userRes = await getCurrentUser();
       setUser(userRes.data);
     } catch (err) {
-      // Expected if logged out—silently clear everything without throwing errors
       localStorage.removeItem("accessToken");
       setUser(null);
     } finally {
@@ -52,7 +57,7 @@ export const AuthProvider = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#0a192f]">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
       </div>
     );

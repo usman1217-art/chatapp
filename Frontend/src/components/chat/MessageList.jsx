@@ -1,17 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useChat } from "../../context/ChatContext";
-import { useSocket } from "../../context/SocketContext";
 import { getMessages } from "../../services/chatApi";
 import MessageBubble from "./MessageBubble";
 
-function MessageList() {
-  const { messages, setMessages, selectedChat } = useChat();
-  const { socket } = useSocket();
+function MessageList({ socket, setMessages }) {
+  const { messages, selectedChat } = useChat();
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef(null);
   const isInitialLoad = useRef(true);
 
-  // Load chat items with explicit loading animation management
   useEffect(() => {
     if (!selectedChat?._id) return;
     
@@ -31,39 +28,42 @@ function MessageList() {
     fetchChatHistory();
   }, [selectedChat?._id, setMessages]);
 
-  // Handle smart layout viewport snapping
   useEffect(() => {
     if (loading || !messages.length) return;
 
     if (isInitialLoad.current) {
-      // INSTANT anchor snapshot on initial opening (No visible scrolling lag)
       bottomRef.current?.scrollIntoView({ behavior: "auto" });
       isInitialLoad.current = false;
     } else {
-      // Smooth floating adjustments for real-time live incoming messaging bubbles
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, loading]);
 
   useEffect(() => {
     if (!socket) return;
-    socket.on("messageDeleted", ({ messageId }) => {
+    
+    const handleMessageDeleted = ({ messageId }) => {
       setMessages((prev) =>
-        prev.map((m) => m._id === messageId ? { ...m, text: "This message was deleted", image: null, deletedForEveryone: true } : m)
+        prev.map((m) =>
+          m._id === messageId
+            ? { ...m, text: "This message was deleted", image: null, deletedForEveryone: true }
+            : m
+        )
       );
-    });
-    return () => socket.off("messageDeleted");
+    };
+
+    socket.on("messageDeleted", handleMessageDeleted);
+    return () => socket.off("messageDeleted", handleMessageDeleted);
   }, [socket, setMessages]);
 
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col justify-center items-center bg-[#0a192f] gap-3">
-        {/* Sleek, pulsing modern loader animation */}
+      <div className="flex-1 flex flex-col justify-center items-center bg-slate-50 dark:bg-[#0a192f] gap-3 transition-colors duration-300">
         <div className="relative w-12 h-12">
           <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20 animate-pulse"></div>
           <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 animate-spin"></div>
         </div>
-        <span className="text-xs font-semibold text-indigo-400 tracking-widest uppercase animate-pulse">
+        <span className="text-xs font-semibold text-indigo-500 dark:text-indigo-400 tracking-widest uppercase animate-pulse">
           Syncing secure conversation...
         </span>
       </div>
@@ -71,7 +71,7 @@ function MessageList() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-5 space-y-2 bg-[#0a192f] scrollbar-thin scrollbar-thumb-slate-800">
+    <div className="flex-1 overflow-y-auto p-5 space-y-2 bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-800">
       {messages.map((msg, index) => (
         <MessageBubble key={msg._id || index} message={msg} />
       ))}

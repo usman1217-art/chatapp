@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import ChatHeader from "./ChatHeader";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
@@ -17,25 +16,6 @@ function ChatWindow() {
     setActiveLightboxImage,
     setMessages 
   } = useChat();
-
-  // --- REAL-TIME DELETE LISTENER ---
-  useEffect(() => {
-    if (!socket) return;
-    
-    const handleMessageDeleted = ({ messageId }) => {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m._id === messageId
-            ? { ...m, text: "This message was deleted", image: null, deletedForEveryone: true }
-            : m
-        )
-      );
-    };
-
-    socket.on("messageDeleted", handleMessageDeleted);
-    return () => socket.off("messageDeleted", handleMessageDeleted);
-  }, [socket, setMessages]);
-  // ---------------------------------
 
   if (!selectedChat) {
     return (
@@ -72,7 +52,6 @@ function ChatWindow() {
       window.URL.revokeObjectURL(localBlobUrl);
     } catch (error) {
       console.error("Image downloader file acquisition exception:", error);
-      alert("Browser security blocked download. Open the source link manually.");
     }
   };
 
@@ -83,7 +62,8 @@ function ChatWindow() {
         <div onClick={() => setViewingProfile(!viewingProfile)} className="cursor-pointer">
           <ChatHeader />
         </div>
-        <MessageList />
+        {/* Pass socket down explicitly here */}
+        <MessageList socket={socket} setMessages={setMessages} />
         <MessageInput />
       </div>
 
