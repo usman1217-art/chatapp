@@ -7,18 +7,22 @@ const socketHandler = (io) => {
 
     // User joins
     socket.on("join", (userId) => {
-      if (!onlineUsers.has(userId)) {
-        onlineUsers.set(userId, new Set());
+      const stringUserId = userId?.toString();
+      if (!stringUserId) return;
+
+      if (!onlineUsers.has(stringUserId)) {
+        onlineUsers.set(stringUserId, new Set());
       }
-      onlineUsers.get(userId).add(socket.id);
-      socketUsers.set(socket.id, userId);
+      onlineUsers.get(stringUserId).add(socket.id);
+      socketUsers.set(socket.id, stringUserId);
 
       io.emit("onlineUsers", [...onlineUsers.keys()]);
     });
 
     // Send Message
     socket.on("sendMessage", (data) => {
-      const receiverSockets = onlineUsers.get(data.receiverId?.toString());
+      const receiverIdStr = data.receiverId?.toString();
+      const receiverSockets = onlineUsers.get(receiverIdStr);
       if (receiverSockets) {
         receiverSockets.forEach((socketId) => {
           io.to(socketId).emit("receiveMessage", data.message);
@@ -28,7 +32,8 @@ const socketHandler = (io) => {
 
     // Typing
     socket.on("typing", ({ receiverId }) => {
-      const receiverSockets = onlineUsers.get(receiverId);
+      const receiverIdStr = receiverId?.toString();
+      const receiverSockets = onlineUsers.get(receiverIdStr);
       if (receiverSockets) {
         receiverSockets.forEach((socketId) => {
           io.to(socketId).emit("typing");
@@ -38,7 +43,8 @@ const socketHandler = (io) => {
 
     // Stop Typing
     socket.on("stopTyping", ({ receiverId }) => {
-      const receiverSockets = onlineUsers.get(receiverId);
+      const receiverIdStr = receiverId?.toString();
+      const receiverSockets = onlineUsers.get(receiverIdStr);
       if (receiverSockets) {
         receiverSockets.forEach((socketId) => {
           io.to(socketId).emit("stopTyping");
@@ -48,7 +54,8 @@ const socketHandler = (io) => {
 
     // Read Receipt
     socket.on("messageRead", (data) => {
-      const receiverSockets = onlineUsers.get(data.receiverId);
+      const receiverIdStr = data.receiverId?.toString();
+      const receiverSockets = onlineUsers.get(receiverIdStr);
       if (receiverSockets) {
         receiverSockets.forEach((socketId) => {
           io.to(socketId).emit("messageRead", data.messageId);
@@ -56,9 +63,10 @@ const socketHandler = (io) => {
       }
     });
 
-    // Delete For Everyone (Updated to match frontend event name and payload)
+    // Delete For Everyone (Fixed to ensure string matching evaluation)
     socket.on("deleteMessage", (data) => {
-      const receiverSockets = onlineUsers.get(data.receiverId);
+      const receiverIdStr = data.receiverId?.toString();
+      const receiverSockets = onlineUsers.get(receiverIdStr);
       if (receiverSockets) {
         receiverSockets.forEach((socketId) => {
           io.to(socketId).emit("messageDeleted", { 

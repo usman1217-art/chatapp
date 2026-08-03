@@ -1,13 +1,5 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-
+import { createContext, useContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
-
 import { useAuth } from "./AuthContext";
 import { useChat } from "./ChatContext";
 
@@ -21,97 +13,75 @@ export const SocketProvider = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
 
-  const typingTimeoutRef = useRef(null);
+  // Maintain atomic references to prevent event closures from tracking stale data
+  const chatRef = useState(selectedChat);
+  useEffect(() => { chatRef.current = selectedChat; }, [selectedChat]);
 
+  // Handle core socket instantiation
   useEffect(() => {
     if (!user) return;
 
-    const newSocket = io(
-      import.meta.env.VITE_SOCKET_URL || "http://localhost:3000"
-    );
-
+    const newSocket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:3000");
     newSocket.emit("join", user._id);
 
-    // Online users list
-    newSocket.on("onlineUsers", (users) => {
-      setOnlineUsers(users);
-    });
-
-    // Receive New Message
-    newSocket.on("receiveMessage", (message) => {
-      setMessages((prev) => {
-        const exist = prev.find(
-          (m) => m._id === message._id
-        );
-
-        if (exist) return prev;
-
-        return [...prev, message];
-      });
-    });
-
-    // Message Read
-    newSocket.on("messageRead", (messageId) => {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m._id === messageId
-            ? { ...m, read: true }
-            : m
-        )
-      );
-    });
-
-    // Delete For Everyone Real-time Sync
-    newSocket.on("messageDeleted", (messageId) => {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m._id === messageId
-            ? {
-                ...m,
-                text: "This message was deleted",
-                image: null,
-                deletedForEveryone: true,
-              }
-            : m
-        )
-      );
-    });
-
-    // Typing indicator (scoped to whichever chat is currently open)
-    newSocket.on("typing", () => {
-      setIsTyping(true);
-
-      clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = setTimeout(() => {
-        setIsTyping(false);
-      }, 3000);
-    });
-
-    newSocket.on("stopTyping", () => {
-      clearTimeout(typingTimeoutRef.current);
-      setIsTyping(false);
-    });
-
+    newSocket.on("onlineUsers", (users) => setOnlineUsers(users));
     setSocket(newSocket);
 
     return () => {
       newSocket.disconnect();
     };
-  }, [user, setMessages]);
+  }, [user]);
 
-  // Reset the indicator whenever the open chat changes
+  // Handle dynamic real-time event updates
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("receiveMessage", (message) => {
+      const currentChat = chatRef.current;
+      // Only commit message to screen if it belongs to the currently active window
+      if (currentChat && message.chat === currentChat._id) {
+        setMessages((prev) => {
+          if (prev.some((m) => m._id === message._id)) return prev;
+          return [...prev, message];
+        });
+      }
+    });
+
+    socket.on("messageRead", (messageId) => {
+      setMessages((prev) => prev.map((m) => m._id === messageId ? { ...m, read: true } : m));
+    });
+
+    socket.on("messageDeleted", ({ messageId }) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m._id === messageId
+            ? { ...m, text: "This message was deleted", image: null, deletedForEveryone: true }
+            : m
+        )
+      );
+    });
+
+    socket.on("typing", () => setIsTyping(true));
+    socket.on("stopTyping", () => setIsTyping(false));
+
+    return () => {
+      socket.off("receiveMessage");
+      socket.off("messageRead");
+      socket.off("messageDeleted");
+      socket.off("typing");
+      socket.off("stopTyping");
+    };
+  }, [socket, setMessages]);
+
   useEffect(() => {
     setIsTyping(false);
   }, [selectedChat?._id]);
 
   return (
-    <SocketContext.Provider
-      value={{ socket, onlineUsers, isTyping }}
-    >
+    <SocketContext.Provider value={{ socket, onlineUsers, isTyping }}>
       {children}
     </SocketContext.Provider>
   );
 };
 
-export const useSocket = () =>
-  useContext(SocketContext);
+export const useSocket = () => useContext(SocketContext);

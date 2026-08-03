@@ -5,74 +5,49 @@ const imagekit = require("../config/imagekit");
 
 const sendMessage = async (req, res) => {
   try {
-    const { chatId, text } = req.body;
+    const { chatId, text, replyToId } = req.body; // Capture replyToId
 
-    // Don't allow empty messages
     if (!text && !req.file) {
-      return res.status(400).json({
-        message: "Message cannot be empty",
-      });
+      return res.status(400).json({ message: "Message cannot be empty" });
     }
 
-    // Check chat exists
     const chat = await Chat.findById(chatId);
-
-    if (!chat) {
-      return res.status(404).json({
-        message: "Chat not found",
-      });
-    }
-
-    // Check user belongs to chat
-    if (
-      !chat.participants.some(
-        (id) => id.toString() === req.user.id
-      )
-    ) {
-      return res.status(403).json({
-        message: "Unauthorized",
-      });
-    }
+    if (!chat) return res.status(404).json({ message: "Chat not found" });
 
     let imageUrl = "";
-
     if (req.file) {
       const uploadedImage = await imagekit.upload({
         file: req.file.buffer,
         fileName: Date.now() + "-" + req.file.originalname,
         folder: "/chat-app/messages",
       });
-
       imageUrl = uploadedImage.url;
     }
 
+    // Save with the reply reference attached
     const message = await Message.create({
       chat: chatId,
       sender: req.user.id,
       text: text || "",
       image: imageUrl,
+      replyTo: replyToId || null, 
     });
 
-    await Chat.findByIdAndUpdate(chatId, {
-      lastMessage: message._id,
-    });
+    await Chat.findByIdAndUpdate(chatId, { lastMessage: message._id });
 
-    const receiverId = chat.participants.find(
-      (id) => id.toString() !== req.user.id
-    );
-
+    // POPULATE BOTH SENDER AND THE REPLIED MESSAGE PERMANENTLY
     const populatedMessage = await Message.findById(message._id)
-      .populate("sender", "name avatar");
+      .populate("sender", "name avatar")
+      .populate("replyTo", "text image sender"); // Grabs parent text/image
+
+    const receiverId = chat.participants.find((id) => id.toString() !== req.user.id);
 
     res.status(201).json({
       message: populatedMessage,
       receiverId,
     });
-
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -110,54 +85,22 @@ const deleteForMe = async (req, res) => {
 const getMessages = async (req, res) => {
   try {
     const chat = await Chat.findById(req.params.chatId);
+    if (!chat) return res.status(404).json({ message: "Chat not found" });
 
-    if (!chat) {
-      return res.status(404).json({
-        message: "Chat not found",
-      });
-    }
-
-    if (
-      !chat.participants.some(
-        (id) => id.toString() === req.user.id
-      )
-    ) {
-      return res.status(403).json({
-        message: "Unauthorized",
-      });
-    }
-
-    const deletedMessages = await DeletedMessage.find({
-      user: req.user.id,
-    });
-
-    const deletedIds = deletedMessages.map(
-      (item) => item.message
-    );
-
-    // Pagination
     const page = Number(req.query.page) || 1;
-
     const limit = 30;
-
     const skip = (page - 1) * limit;
 
-    const messages = await Message.find({
-      chat: req.params.chatId,
-      _id: { $nin: deletedIds },
-    })
+    const messages = await Message.find({ chat: req.params.chatId })
       .populate("sender", "name avatar")
-      .sort({ createdAt: -1 }) // Newest first
+      .populate("replyTo", "text image") // ALWAYS POPULATE THE PARENT LINK
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    // Return oldest → newest for the UI
     res.json(messages.reverse());
-
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
+    res.status(500).json({ message: err.message });
   }
 };
 

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { sendMessage } from "../../services/chatApi";
 import { useChat } from "../../context/ChatContext";
 import { useSocket } from "../../context/SocketContext";
@@ -8,17 +8,26 @@ function MessageInput() {
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   const typingTimeout = useRef(null);
   const fileInputRef = useRef(null);
+  const textInputRef = useRef(null);
 
   const { socket } = useSocket();
   const { user } = useAuth();
-  const { selectedChat, setMessages } = useChat();
+  const { selectedChat, setMessages, replyingTo, setReplyingTo } = useChat();
 
   const receiver = selectedChat?.participants.find(
     (p) => p._id !== user._id
   );
+
+  // Auto-focus text input when a user initiates a reply
+  useEffect(() => {
+    if (replyingTo && textInputRef.current) {
+      textInputRef.current.focus();
+    }
+  }, [replyingTo]);
 
   const handleTyping = (value) => {
     setText(value);
@@ -33,11 +42,58 @@ function MessageInput() {
     }, 1000);
   };
 
-  const handleImageChange = (e) => {
+  // Canvas Image Compression logic
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 1000;
+          const MAX_HEIGHT = 1000;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          ctx.canvas.toBlob((blob) => {
+            const compressedFile = new File([blob], file.name, {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          }, "image/jpeg", 0.7);
+        };
+      };
+    });
+  };
+
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImage(file);
-      setImagePreview(URL.createObjectURL(file)); 
+      setIsCompressing(true);
+      const optimizedImg = await compressImage(file);
+      setImage(optimizedImg);
+      setImagePreview(URL.createObjectURL(optimizedImg));
+      setIsCompressing(false);
     }
   };
 
@@ -50,16 +106,44 @@ function MessageInput() {
   const submit = async () => {
     if (!text.trim() && !image) return;
 
+    const currentText = text;
+    const currentReply = replyingTo;
+    
+    // 1. Optimistic UI: Render instantly to screen
+    const optimisticMessage = {
+      _id: `temp-${Date.now()}`,
+      chat: selectedChat._id,
+      sender: user,
+      text: currentText,
+      image: imagePreview,
+      replyTo: currentReply,
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
+    setText("");
+    clearImage();
+    setReplyingTo(null);
+
+    // 2. Prepare database payload
     const formData = new FormData();
     formData.append("chatId", selectedChat._id);
-    formData.append("text", text);
-
+    formData.append("text", currentText);
+    
     if (image) {
       formData.append("image", image);
+    }
+    if (currentReply) {
+      formData.append("replyToId", currentReply._id);
     }
 
     try {
       const res = await sendMessage(formData);
+
+      // 3. Replace the placeholder message with the real one from the server
+      setMessages((prev) =>
+        prev.map((m) => (m._id === optimisticMessage._id ? res.data.message : m))
+      );
 
       if (socket) {
         socket.emit("sendMessage", {
@@ -67,19 +151,29 @@ function MessageInput() {
           message: res.data.message,
         });
       }
-
-      setMessages((prev) => [...prev, res.data.message]);
-
-      setText("");
-      clearImage();
     } catch (err) {
       console.log(err);
+      // Remove optimistic message if network request completely fails
+      setMessages((prev) => prev.filter((m) => m._id !== optimisticMessage._id));
     }
   };
 
   return (
     <div className="border-t border-slate-800 bg-[#0a192f] p-4 flex flex-col gap-2 transition-colors duration-300 shrink-0">
       
+      {/* Reply UI Overlay */}
+      {replyingTo && (
+        <div className="flex items-center justify-between bg-slate-800/60 border-l-4 border-indigo-500 px-4 py-2 rounded-md mb-1 animate-fade-in">
+          <div className="truncate text-xs">
+            <span className="text-indigo-400 font-bold block">Replying to message</span>
+            <span className="text-slate-300">{replyingTo.text || "📷 Image"}</span>
+          </div>
+          <button onClick={() => setReplyingTo(null)} className="text-slate-400 hover:text-white text-lg font-bold ml-2">
+            &times;
+          </button>
+        </div>
+      )}
+
       {/* Tiny Image Preview Thumbnail */}
       {imagePreview && (
         <div className="relative self-start mb-1 ml-12">
@@ -110,8 +204,9 @@ function MessageInput() {
 
         {/* Custom Image Upload Icon Button */}
         <button
+          disabled={isCompressing}
           onClick={() => fileInputRef.current.click()}
-          className="p-2.5 text-slate-400 hover:text-indigo-400 bg-slate-800 hover:bg-slate-700 rounded-full transition-all shrink-0 border border-slate-700/60"
+          className="p-2.5 text-slate-400 hover:text-indigo-400 bg-slate-800 hover:bg-slate-700 rounded-full transition-all shrink-0 border border-slate-700/60 disabled:opacity-40"
           title="Attach Image"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,17 +216,19 @@ function MessageInput() {
 
         {/* Text Input */}
         <input
+          ref={textInputRef}
           value={text}
           onChange={(e) => handleTyping(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
           className="flex-1 bg-slate-800 border border-slate-700 focus:border-indigo-500 text-slate-100 px-5 py-3 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder-slate-400 shadow-inner"
-          placeholder="Type a message..."
+          placeholder={isCompressing ? "Compressing image..." : "Type a message..."}
+          disabled={isCompressing}
         />
 
         {/* Send Button Icon */}
         <button
           onClick={submit}
-          disabled={!text.trim() && !image}
+          disabled={(!text.trim() && !image) || isCompressing}
           className="p-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full transition-all shadow-sm flex items-center justify-center shrink-0"
           title="Send Message"
         >
