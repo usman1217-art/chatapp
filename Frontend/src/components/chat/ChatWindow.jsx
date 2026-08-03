@@ -59,7 +59,16 @@ function ChatWindow() {
     <div className="flex flex-1 w-full h-[100dvh] md:h-screen bg-slate-50 dark:bg-[#0a192f] overflow-hidden relative transition-colors duration-300">
       
       <div className="flex flex-col flex-1 overflow-hidden">
-        <div onClick={() => setViewingProfile(!viewingProfile)} className="cursor-pointer">
+        {/* FIX (header moves while typing/scrolling): this wrapper div sits
+            inside a flex-col column but had no shrink-0, so it was still
+            allowed to shrink like a normal flex item whenever the column's
+            content grew (e.g. the on-screen keyboard resizing the viewport
+            on mobile). sticky + shrink-0 pins it to the top no matter what
+            the message list or input below it are doing. */}
+        <div
+          onClick={() => setViewingProfile(!viewingProfile)}
+          className="cursor-pointer sticky top-0 z-20 shrink-0"
+        >
           <ChatHeader />
         </div>
         {/* Pass socket down explicitly here */}

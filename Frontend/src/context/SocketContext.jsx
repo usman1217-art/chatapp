@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 import { useChat } from "./ChatContext";
@@ -12,9 +12,16 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [typingFrom, setTypingFrom] = useState(null);
 
-  // Maintain atomic references to prevent event closures from tracking stale data
-  const chatRef = useState(selectedChat);
+  // Maintain atomic references to prevent event closures from tracking stale data.
+  // FIX: this MUST be useRef, not useState. useState creates a brand-new array on
+  // every render, so the listener registered once below (in the [socket] effect)
+  // was reading a frozen/stale reference and never saw chat switches — meaning
+  // incoming messages from the other person never appeared until you reopened
+  // the chat. useRef gives one stable object whose .current always reflects the
+  // latest selected chat.
+  const chatRef = useRef(selectedChat);
   useEffect(() => { chatRef.current = selectedChat; }, [selectedChat]);
 
   // Handle core socket instantiation
@@ -61,8 +68,20 @@ export const SocketProvider = ({ children }) => {
       );
     });
 
-    socket.on("typing", () => setIsTyping(true));
-    socket.on("stopTyping", () => setIsTyping(false));
+    // FIX: the server now tells us WHO is typing and WHICH chat it's for
+    // (see Backend/sockets/socket.js). Previously "typing" carried no
+    // identifying info at all, so isTyping was flipped to true globally and
+    // every open chat showed "typing..." no matter who was actually typing.
+    socket.on("typing", ({ senderId, chatId } = {}) => {
+      const currentChat = chatRef.current;
+      if (currentChat && (chatId === currentChat._id || senderId)) {
+        setTypingFrom(senderId || null);
+      }
+    });
+
+    socket.on("stopTyping", ({ senderId, chatId } = {}) => {
+      setTypingFrom((prev) => (prev === senderId || chatId ? null : prev));
+    });
 
     return () => {
       socket.off("receiveMessage");
@@ -73,9 +92,23 @@ export const SocketProvider = ({ children }) => {
     };
   }, [socket, setMessages]);
 
+  // Reset typing state whenever the active chat changes
   useEffect(() => {
-    setIsTyping(false);
+    setTypingFrom(null);
   }, [selectedChat?._id]);
+
+  // Only report "isTyping" if the person typing is actually the other
+  // participant of the currently open chat.
+  useEffect(() => {
+    if (!typingFrom || !selectedChat) {
+      setIsTyping(false);
+      return;
+    }
+    const otherUserId = selectedChat.participants
+      ?.map((p) => p._id || p)
+      .find((id) => id !== user?._id);
+    setIsTyping(typingFrom === otherUserId);
+  }, [typingFrom, selectedChat, user?._id]);
 
   return (
     <SocketContext.Provider value={{ socket, onlineUsers, isTyping }}>

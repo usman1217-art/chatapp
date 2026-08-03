@@ -31,23 +31,29 @@ const socketHandler = (io) => {
     });
 
     // Typing
-    socket.on("typing", ({ receiverId }) => {
+    // FIX: previously this only told the receiver "someone is typing" with no
+    // sender/chat info, so the frontend lit up the typing indicator in every
+    // open chat window regardless of who was actually typing. Now we forward
+    // who is typing and in which chat so the client can filter correctly.
+    socket.on("typing", ({ receiverId, chatId }) => {
       const receiverIdStr = receiverId?.toString();
+      const senderId = socketUsers.get(socket.id);
       const receiverSockets = onlineUsers.get(receiverIdStr);
       if (receiverSockets) {
         receiverSockets.forEach((socketId) => {
-          io.to(socketId).emit("typing");
+          io.to(socketId).emit("typing", { senderId, chatId });
         });
       }
     });
 
     // Stop Typing
-    socket.on("stopTyping", ({ receiverId }) => {
+    socket.on("stopTyping", ({ receiverId, chatId }) => {
       const receiverIdStr = receiverId?.toString();
+      const senderId = socketUsers.get(socket.id);
       const receiverSockets = onlineUsers.get(receiverIdStr);
       if (receiverSockets) {
         receiverSockets.forEach((socketId) => {
-          io.to(socketId).emit("stopTyping");
+          io.to(socketId).emit("stopTyping", { senderId, chatId });
         });
       }
     });

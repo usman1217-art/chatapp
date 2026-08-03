@@ -34,11 +34,11 @@ function MessageInput() {
 
     if (!socket || !receiver) return;
 
-    socket.emit("typing", { receiverId: receiver._id });
+    socket.emit("typing", { receiverId: receiver._id, chatId: selectedChat?._id });
 
     clearTimeout(typingTimeout.current);
     typingTimeout.current = setTimeout(() => {
-      socket.emit("stopTyping", { receiverId: receiver._id });
+      socket.emit("stopTyping", { receiverId: receiver._id, chatId: selectedChat?._id });
     }, 1000);
   };
 
