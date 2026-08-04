@@ -234,10 +234,15 @@ const googleLogin = async (req, res) => {
 // ================= REFRESH TOKEN =================
 // ================= REFRESH TOKEN =================
 const refreshAccessToken = async (req, res) => {
+  console.log("===== REFRESH CALLED =====");
+
   try {
     const refreshToken = req.cookies.refreshToken;
 
+    console.log("COOKIE:", refreshToken);
+
     if (!refreshToken) {
+      console.log("NO COOKIE");
       return res.status(401).json({
         message: "Refresh token missing",
       });
@@ -248,17 +253,19 @@ const refreshAccessToken = async (req, res) => {
       process.env.JWT_REFRESH_SECRET
     );
 
+    console.log("DECODED:", decoded);
+
     const user = await User.findById(decoded.id);
 
-    if (!user) {
-      return res.status(401).json({
-        message: "User not found",
-      });
-    }
+    console.log("USER:", user?._id);
+
+    console.log("TOKENS:", user?.refreshTokens);
 
     const exists = user.refreshTokens.some(
       (item) => item.token === refreshToken
     );
+
+    console.log("EXISTS:", exists);
 
     if (!exists) {
       return res.status(401).json({
@@ -268,11 +275,12 @@ const refreshAccessToken = async (req, res) => {
 
     const accessToken = generateAccessToken(user._id);
 
-    return res.json({
-      accessToken,
-    });
+    console.log("SUCCESS");
+
+    return res.json({ accessToken });
 
   } catch (err) {
+    console.log("ERROR:", err.message);
     return res.status(401).json({
       message: err.message,
     });
