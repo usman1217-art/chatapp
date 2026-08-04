@@ -156,9 +156,10 @@ function MessageBubble({ message }) {
       >
         {!message.deletedForEveryone && (isHovered || showMenu) && (
           <div className="absolute top-2 right-2 z-30 flex items-center gap-1 bg-black/10 dark:bg-black/30 backdrop-blur-md rounded-full p-0.5">
+            {/* Hidden on mobile screens, visible on desktop */}
             <button 
               onClick={() => setReplyingTo(message)}
-              className="p-1 rounded-full transition-colors cursor-pointer text-white hover:bg-white/20"
+              className="hidden md:block p-1 rounded-full transition-colors cursor-pointer text-white hover:bg-white/20"
               title="Reply"
             >
               <svg className="w-3.5 h-3.5 drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -209,21 +210,46 @@ function MessageBubble({ message }) {
           {message.deletedForEveryone ? "This message was deleted" : message.text}
         </p>
 
-        {/* --- 12-HOUR TIME FORMAT --- */}
-        <span
-          className={`text-[10px] block mt-1.5 self-end font-bold tracking-wider ${
-            own ? "text-indigo-200" : "text-slate-500 dark:text-slate-400"
-          }`}
-        >
-          {new Date(message.createdAt || Date.now()).toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true, // Forces 12-hour format
-          })}
-        </span>
+        <div className="flex items-center justify-end gap-1.5 mt-1.5">
+          <span
+            className={`text-[10px] font-bold tracking-wider ${
+              own ? "text-indigo-200" : "text-slate-500 dark:text-slate-400"
+            }`}
+          >
+            {new Date(message.createdAt || Date.now()).toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true,
+            })}
+          </span>
+          
+          {own && !message.deletedForEveryone && (
+            <div className="flex -ml-0.5">
+              <svg 
+                className={`w-3.5 h-3.5 ${message.isRead ? "text-emerald-400" : "text-indigo-200/60"}`} 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                strokeWidth="3"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              {message.isRead && (
+                <svg 
+                  className="w-3.5 h-3.5 text-emerald-400 -ml-2" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor" 
+                  strokeWidth="3"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* --- TELEPORTED FROSTED GLASS MODAL --- */}
       {showMenu && createPortal(
         <div 
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm p-4 animate-fade-in"

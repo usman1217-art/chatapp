@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useChat } from "../../context/ChatContext";
+import { useAuth } from "../../context/AuthContext";
 import { getMessages } from "../../services/chatApi";
 import MessageBubble from "./MessageBubble";
 
 function MessageList({ socket, setMessages }) {
   const { messages, selectedChat } = useChat();
+  const { user } = useAuth(); // Need to know who the current user is
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef(null);
   const isInitialLoad = useRef(true);
@@ -41,7 +43,35 @@ function MessageList({ socket, setMessages }) {
     }
   }, [messages, loading]);
 
-  // 3. --- REAL-TIME SOCKET LISTENERS ---
+  // 3. --- NEW: AUTO-MARK MESSAGES AS READ ---
+  useEffect(() => {
+    if (!socket || !selectedChat || !messages.length || !user?._id) return;
+
+    // Find any unread messages sent by the *other* person
+    const unreadIncomingMessages = messages.filter(
+      (m) => !m.isRead && (m.sender?._id || m.sender) !== user._id
+    );
+
+    if (unreadIncomingMessages.length > 0) {
+      // 1. Tell the server to mark these messages as read in the database
+      socket.emit("markAsRead", { 
+        chatId: selectedChat._id, 
+        readerId: user._id 
+      });
+      
+      // 2. Optimistically update local UI so we don't refetch
+      setMessages((prev) =>
+        prev.map((m) =>
+          !m.isRead && (m.sender?._id || m.sender) !== user._id
+            ? { ...m, isRead: true }
+            : m
+        )
+      );
+    }
+  }, [messages, socket, selectedChat, user?._id, setMessages]);
+
+
+  // 4. --- REAL-TIME SOCKET LISTENERS ---
   useEffect(() => {
     if (!socket) return;
     
@@ -58,57 +88,66 @@ function MessageList({ socket, setMessages }) {
 
     // B. Handle New Incoming Messages
     const handleReceiveMessage = (newMessage) => {
-      // Check if the incoming message belongs to the currently active chat
       const belongsToCurrentChat = selectedChat && (newMessage.chat === selectedChat._id || newMessage.chat?._id === selectedChat._id);
       
       if (belongsToCurrentChat) {
         setMessages((prev) => {
-          // Prevent duplicates (in case the server accidentally sends it twice or optimistic UI overlaps)
           if (prev.some((m) => m._id === newMessage._id)) return prev;
           return [...prev, newMessage];
         });
       }
     };
 
+    // C. Handle Messages being marked as read by the OTHER user
+    const handleMessagesRead = ({ chatId }) => {
+      if (selectedChat?._id === chatId) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            (m.sender?._id || m.sender) === user?._id
+              ? { ...m, isRead: true }
+              : m
+          )
+        );
+      }
+    };
+
     // Bind event listeners
     socket.on("messageDeleted", handleMessageDeleted);
-    
-    // We bind to the most common event names to ensure the frontend catches the backend's broadcast
     socket.on("receiveMessage", handleReceiveMessage);
     socket.on("newMessage", handleReceiveMessage);
     socket.on("getMessage", handleReceiveMessage);
+    socket.on("messagesRead", handleMessagesRead); // Catch read receipts!
 
-    // Cleanup listeners on unmount or chat change
+    // Cleanup listeners
     return () => {
       socket.off("messageDeleted", handleMessageDeleted);
       socket.off("receiveMessage", handleReceiveMessage);
       socket.off("newMessage", handleReceiveMessage);
       socket.off("getMessage", handleReceiveMessage);
+      socket.off("messagesRead", handleMessagesRead);
     };
-  }, [socket, setMessages, selectedChat]);
+  }, [socket, setMessages, selectedChat, user?._id]);
 
-  // Loading State UI
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col justify-center items-center bg-slate-50 dark:bg-[#0a192f] gap-3 transition-colors duration-300">
-        <div className="relative w-12 h-12">
-          <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20 animate-pulse"></div>
+      <div className="flex-1 flex flex-col justify-center items-center bg-slate-50/50 dark:bg-[#0a192f]/50 backdrop-blur-sm gap-4 transition-colors duration-300">
+        <div className="relative w-14 h-14">
+          <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20 animate-pulse shadow-lg"></div>
           <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 animate-spin"></div>
         </div>
-        <span className="text-xs font-semibold text-indigo-500 dark:text-indigo-400 tracking-widest uppercase animate-pulse">
-          Syncing secure conversation...
+        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 tracking-widest uppercase animate-pulse">
+          Syncing conversation...
         </span>
       </div>
     );
   }
 
-  // Active Chat Messages UI
   return (
-    <div className="flex-1 overflow-y-auto p-5 space-y-2 bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-800">
+    <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-2 bg-slate-50/40 dark:bg-[#0a192f]/40 backdrop-blur-sm transition-colors duration-300 scrollbar-thin scrollbar-thumb-slate-300/80 dark:scrollbar-thumb-slate-700/80">
       {messages.map((msg, index) => (
         <MessageBubble key={msg._id || index} message={msg} />
       ))}
-      <div ref={bottomRef} className="h-1" />
+      <div ref={bottomRef} className="h-2" />
     </div>
   );
 }
