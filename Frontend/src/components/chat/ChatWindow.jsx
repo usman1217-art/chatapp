@@ -74,24 +74,28 @@ function ChatWindow() {
   return (
     <div className="flex flex-1 w-full h-[100dvh] md:h-screen bg-slate-50 dark:bg-[#0a192f] overflow-hidden relative transition-colors duration-300">
       
-      <div className="flex flex-col flex-1 overflow-hidden">
-        {/* FIX (header moves while typing/scrolling): this wrapper div sits
-            inside a flex-col column but had no shrink-0, so it was still
-            allowed to shrink like a normal flex item whenever the column's
-            content grew (e.g. the on-screen keyboard resizing the viewport
-            on mobile). sticky + shrink-0 pins it to the top no matter what
-            the message list or input below it are doing. */}
+      {/* Primary Communication Channel Content Tree */}
+      <div className="flex flex-col flex-1 overflow-hidden relative">
+        
+        {/* --- LOCKED MOBILE HEADER LAYER --- */}
+        {/* Pinned with complete hard absolute tracking on mobile layout screens to neutralize keyboard viewport resizes */}
         <div
           onClick={() => setViewingProfile(!viewingProfile)}
-          className="cursor-pointer sticky top-0 z-20 shrink-0"
+          className="cursor-pointer max-md:absolute max-md:top-0 max-md:left-0 max-md:right-0 sticky top-0 z-30 shrink-0"
         >
           <ChatHeader />
         </div>
-        {/* Pass socket down explicitly here */}
-        <MessageList socket={socket} setMessages={setMessages} />
+
+        {/* --- MESSAGE SCROLL VIEW CONTAINER --- */}
+        {/* Added a relative container shell with a padding offset layer matching the mobile header metrics exactly */}
+        <div className="flex-1 flex flex-col min-h-0 max-md:pt-[65px] relative">
+          <MessageList socket={socket} setMessages={setMessages} />
+        </div>
+
         <MessageInput />
       </div>
 
+      {/* Profile Sidebar Drawer */}
       {viewingProfile && (
         <div className="absolute md:relative right-0 top-0 h-full w-80 bg-white dark:bg-[#0d1e36] border-l border-slate-200 dark:border-slate-800 z-50 flex flex-col p-6 shadow-2xl animate-slide-in text-slate-800 dark:text-slate-100 shrink-0 transition-colors duration-300">
           <div className="flex justify-between items-center mb-6">
@@ -126,6 +130,7 @@ function ChatWindow() {
         </div>
       )}
 
+      {/* Fullscreen Lightbox Overlay */}
       {activeLightboxImage && (
         <div 
           onClick={() => setActiveLightboxImage(null)}

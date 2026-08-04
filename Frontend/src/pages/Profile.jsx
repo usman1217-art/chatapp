@@ -1,6 +1,47 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom"; 
 import { useAuth } from "../context/AuthContext";
+import Cropper from "react-easy-crop";
+
+// --- UTILITY FUNCTIONS FOR CROPPING ---
+const createImage = (url) =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener("load", () => resolve(image));
+    image.addEventListener("error", (error) => reject(error));
+    image.src = url;
+  });
+
+const getCroppedImg = async (imageSrc, pixelCrop) => {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) return null;
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height
+  );
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(new File([blob], "avatar.jpg", { type: "image/jpeg" }));
+    }, "image/jpeg");
+  });
+};
+// --------------------------------------
+
 
 function Profile() {
   const [user, setUser] = useState(null);
@@ -11,9 +52,15 @@ function Profile() {
   const [editForm, setEditForm] = useState({ name: "", about: "" });
   const [isSaving, setIsSaving] = useState(false);
   
-  // Custom Confirmation Modal state
   const [confirmModal, setConfirmModal] = useState({ show: false, message: "", onConfirm: null });
   const [statusMessage, setStatusMessage] = useState("");
+
+  // --- CROPPER STATE ---
+  const [cropModal, setCropModal] = useState({ show: false, imageSrc: null });
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
@@ -54,21 +101,45 @@ function Profile() {
     }
   };
 
+  // --- IMAGE SELECTION & CROPPING LOGIC ---
   const handlePhotoClick = () => {
     fileInputRef.current.click();
   };
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const localImageUrl = URL.createObjectURL(file);
-    setUser((prev) => ({ ...prev, avatar: localImageUrl }));
+    // Read the file as a data URL to show in the cropper
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      setCropModal({ show: true, imageSrc: reader.result });
+    });
+    reader.readAsDataURL(file);
+    
+    e.target.value = null; // Reset input so the same file can be selected again if needed
+  };
 
-    const formData = new FormData();
-    formData.append("image", file);
+  const onCropComplete = (croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
 
+  const handleCropSave = async () => {
+    setIsUploading(true);
     try {
+      // Generate the cropped image file
+      const croppedFile = await getCroppedImg(cropModal.imageSrc, croppedAreaPixels);
+
+      // Optimistic UI update
+      const localImageUrl = URL.createObjectURL(croppedFile);
+      setUser((prev) => ({ ...prev, avatar: localImageUrl }));
+      setCropModal({ show: false, imageSrc: null });
+      setZoom(1); // reset zoom for next time
+
+      // Upload to server
+      const formData = new FormData();
+      formData.append("image", croppedFile);
+
       const token = localStorage.getItem("accessToken");
       const response = await fetch(`${import.meta.env.VITE_API_URL}/users/profile-image`, {
         method: "PUT",
@@ -80,11 +151,22 @@ function Profile() {
         const updatedUser = await response.json();
         setUser(updatedUser);
         triggerToast("Avatar updated successfully!");
+      } else {
+        triggerToast("Failed to upload avatar on server.");
       }
     } catch (error) {
-      console.error("Error uploading image:", error);
+      console.error("Error cropping/uploading image:", error);
+      triggerToast("An error occurred during upload.");
+    } finally {
+      setIsUploading(false);
     }
   };
+
+  const cancelCrop = () => {
+    setCropModal({ show: false, imageSrc: null });
+    setZoom(1);
+  };
+  // ------------------------------------------
 
   const handleDeletePhoto = (e) => {
     e.stopPropagation(); 
@@ -159,7 +241,7 @@ function Profile() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex justify-center items-center h-screen bg-transparent">
+      <div className="flex-1 flex justify-center items-center h-screen bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
       </div>
     );
@@ -167,7 +249,7 @@ function Profile() {
 
   if (!user) {
     return (
-      <div className="flex-1 flex justify-center items-center h-screen text-slate-700 dark:text-slate-300 font-medium">
+      <div className="flex-1 flex justify-center items-center h-screen bg-slate-50 dark:bg-[#0a192f] text-slate-700 dark:text-slate-300 font-medium transition-colors duration-300">
         Unable to load profile data.
       </div>
     );
@@ -176,7 +258,7 @@ function Profile() {
   const displayAvatar = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=4f46e5&color=fff&size=256`;
 
   return (
-    <div className="flex-1 flex flex-col items-center pt-6 pb-10 h-screen overflow-y-auto px-4 relative">
+    <div className="flex-1 flex flex-col items-center pt-6 pb-10 h-screen overflow-y-auto bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300 px-4 relative">
       
       {/* Toast Feedback */}
       {statusMessage && (
@@ -185,22 +267,80 @@ function Profile() {
         </div>
       )}
 
+      {/* --- CROP IMAGE MODAL --- */}
+      {cropModal.show && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[500px] sm:h-[600px] animate-slide-up border border-slate-200 dark:border-slate-800">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900 z-10">
+              <h3 className="text-slate-800 dark:text-slate-100 font-bold text-lg tracking-tight">Adjust Avatar</h3>
+              <button onClick={cancelCrop} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            
+            {/* Cropper Container */}
+            <div className="relative flex-1 bg-black/5 dark:bg-black/40">
+              <Cropper
+                image={cropModal.imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            </div>
+            
+            {/* Controls & Footer */}
+            <div className="p-5 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-4 z-10">
+              <div className="flex items-center gap-4 px-2">
+                <span className="text-slate-500 text-sm">Zoom</span>
+                <input
+                  type="range"
+                  value={zoom}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  onChange={(e) => setZoom(e.target.value)}
+                  className="w-full accent-indigo-600 dark:accent-indigo-500 cursor-pointer"
+                />
+              </div>
+              <div className="flex justify-end gap-3 mt-2">
+                <button onClick={cancelCrop} className="px-5 py-2.5 text-slate-600 dark:text-slate-300 bg-slate-200/50 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl font-semibold transition-colors">
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleCropSave} 
+                  disabled={isUploading} 
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center shadow-sm disabled:opacity-50 transition-colors"
+                >
+                  {isUploading ? "Uploading..." : "Save Picture"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ------------------------ */}
+
+
       {/* Custom Confirmation Modal Overlay */}
       {confirmModal.show && (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl max-w-sm w-full shadow-xl">
             <h4 className="text-slate-800 dark:text-slate-100 font-bold text-base mb-3">Confirm Action</h4>
             <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{confirmModal.message}</p>
             <div className="flex justify-end gap-2">
               <button 
                 onClick={() => setConfirmModal({ show: false, message: "", onConfirm: null })}
-                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               >
                 Cancel
               </button>
               <button 
                 onClick={confirmModal.onConfirm}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-sm"
               >
                 Confirm
               </button>
@@ -254,7 +394,7 @@ function Profile() {
         </div>
 
         {/* Profile Settings Card */}
-        <div className="w-full p-8 rounded-2xl shadow-md border border-slate-300/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/75 backdrop-blur-md transition-all duration-300">
+        <div className="w-full p-8 rounded-2xl shadow-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/75 backdrop-blur-md transition-all duration-300">
           
           <h2 className="text-2xl font-black text-center text-slate-800 dark:text-slate-100 mb-8 tracking-tight">
             Profile Settings
@@ -264,7 +404,7 @@ function Profile() {
           <div className="flex flex-col items-center mb-8">
             <div className="relative group w-32 h-32">
               <div 
-                className="w-full h-full rounded-full overflow-hidden border-4 border-white dark:border-slate-800 shadow-md cursor-pointer transition-all hover:scale-[1.02]"
+                className="w-full h-full rounded-full overflow-hidden border-4 border-slate-100 dark:border-slate-800 shadow-md cursor-pointer transition-all hover:scale-[1.02]"
                 onClick={handlePhotoClick}
               >
                 <img 
@@ -283,7 +423,7 @@ function Profile() {
               {user.avatar && (
                 <button
                   onClick={handleDeletePhoto}
-                  className="absolute bottom-0 right-0 p-2 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md hover:scale-110 transition-all border-2 border-white dark:border-slate-900 cursor-pointer z-10"
+                  className="absolute bottom-0 right-0 p-2 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md hover:scale-110 transition-all border-2 border-slate-100 dark:border-slate-900 cursor-pointer z-10"
                   title="Remove Avatar"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -318,10 +458,10 @@ function Profile() {
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-indigo-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-medium focus:border-indigo-500 dark:focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-inner"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium focus:border-indigo-500 dark:focus:border-indigo-500 focus:outline-none transition-all"
                 />
               ) : (
-                <div className="w-full px-4 py-3 rounded-xl bg-slate-50/90 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 font-semibold shadow-sm">
+                <div className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 font-semibold shadow-sm">
                   {user.name}
                 </div>
               )}
@@ -338,10 +478,10 @@ function Profile() {
                   onChange={(e) => setEditForm({ ...editForm, about: e.target.value })}
                   rows="3"
                   maxLength="150"
-                  className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-indigo-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-medium focus:border-indigo-500 dark:focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-inner resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium focus:border-indigo-500 dark:focus:border-indigo-500 focus:outline-none transition-all resize-none"
                 />
               ) : (
-                <div className="w-full px-4 py-3 rounded-xl bg-slate-50/90 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 font-medium min-h-[88px] whitespace-pre-wrap break-words shadow-sm">
+                <div className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-medium min-h-[88px] whitespace-pre-wrap break-words shadow-sm">
                   {user.about || <span className="text-slate-400 dark:text-slate-500 italic">No description details provided.</span>}
                 </div>
               )}
@@ -352,7 +492,7 @@ function Profile() {
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 Email Address
               </label>
-              <div className="w-full px-4 py-3 rounded-xl bg-slate-200/40 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed select-none">
+              <div className="w-full px-4 py-3 rounded-xl bg-slate-200/50 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed select-none">
                 {user.email}
               </div>
             </div>
@@ -363,7 +503,7 @@ function Profile() {
                 User ID
               </label>
               <div className="flex items-center shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
-                <div className="flex-1 px-4 py-3 bg-slate-50/90 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300 font-mono text-sm truncate select-all">
+                <div className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300 font-mono text-sm truncate select-all">
                   {user.userId}
                 </div>
                 <button
@@ -383,7 +523,7 @@ function Profile() {
             
             <button
               onClick={handleLogout}
-              className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-500/10 dark:hover:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-800/30"
+              className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-500/10 dark:hover:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-800/30 shadow-sm"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
