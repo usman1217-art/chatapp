@@ -41,7 +41,6 @@ function FriendsTab() {
   const handleStartChat = async (friend) => {
     try {
       const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      // Check if chat already exists in state or create a new conversation room via backend
       let existingChat = chats.find(c => 
         c.participants.some(p => (p._id || p) === friend._id)
       );
@@ -70,15 +69,15 @@ function FriendsTab() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#0a192f]">
-      <h2 className="text-slate-200 font-bold text-lg mb-4">My Friends</h2>
+    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300">
+      <h2 className="text-slate-800 dark:text-slate-200 font-bold text-lg mb-4">My Friends</h2>
       {friends.length === 0 ? (
-        <p className="text-slate-400 text-sm">No friends added yet.</p>
+        <p className="text-slate-500 dark:text-slate-400 text-sm">No friends added yet.</p>
       ) : (
         friends.map((friend) => (
           <div
             key={friend._id}
-            className="flex items-center justify-between p-3 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-xl transition-all"
+            className="flex items-center justify-between p-3 bg-white dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl transition-all shadow-sm"
           >
             <div 
               className="flex items-center gap-3 cursor-pointer flex-1"
@@ -90,17 +89,17 @@ function FriendsTab() {
                   `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.name)}&background=4f46e5&color=fff`
                 }
                 alt={friend.name}
-                className="w-10 h-10 rounded-full object-cover border border-slate-600"
+                className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-600 bg-white"
               />
               <div>
-                <h4 className="text-slate-100 font-semibold text-sm">{friend.name}</h4>
-                <p className="text-xs text-slate-400">Click to chat</p>
+                <h4 className="text-slate-900 dark:text-slate-100 font-semibold text-sm">{friend.name}</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Click to chat</p>
               </div>
             </div>
 
             <button
               onClick={() => handleUnfriend(friend._id)}
-              className="px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/10 border border-red-500/20 rounded-lg transition-colors cursor-pointer"
+              className="px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg transition-colors cursor-pointer"
             >
               Unfriend
             </button>

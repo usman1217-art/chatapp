@@ -11,7 +11,6 @@ import { loginUser } from "../services/authApi";
 import { getCurrentUser } from "../services/userApi";
 import { useAuth } from "../context/AuthContext";
 
-// Import your video file (adjust path if needed)
 import bgVideo from "../assets/login-bg.mp4"; 
 
 function Login() {
@@ -21,6 +20,7 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -44,85 +44,68 @@ function Login() {
   };
 
   return (
-    // Uses a column layout on mobile (video top, form bottom) and a row layout on desktop
-    <div className="flex flex-col lg:flex-row min-h-screen w-full bg-[#0a192f] overflow-x-hidden">
+    <div className="flex min-h-screen w-full bg-white dark:bg-[#0a192f] text-slate-800 dark:text-slate-100 font-sans transition-colors duration-500 overflow-hidden antialiased">
       
-      {/* --- VIDEO PANEL --- */}
-      {/* Mobile: Top banner (35vh height) | Desktop: Left panel (50% width, full height) */}
-      <div className="w-full h-[35vh] lg:h-screen lg:w-1/2 xl:w-[60%] relative shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800 shadow-2xl">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover z-0"
-        >
+      {/* --- LEFT SIDE: 50% VIDEO PANEL --- */}
+      <div className="hidden lg:flex w-1/2 relative overflow-hidden border-r border-slate-200 dark:border-slate-800">
+        <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
           <source src={bgVideo} type="video/mp4" />
         </video>
-        
-        {/* Navy color overlay to match your app theme */}
-        <div className="absolute inset-0 bg-[#0a192f]/20 z-10 mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-indigo-900/5 dark:bg-[#0a192f]/40 backdrop-blur-[1px] transition-colors duration-500"></div>
       </div>
 
-      {/* --- FORM PANEL --- */}
-      {/* Mobile: Fills remaining space below video | Desktop: Right panel (50% width) */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 lg:p-12 relative z-20 overflow-y-auto">
-        
-        <div className="w-full max-w-md animate-fade-in drop-shadow-xl py-4">
-          <AuthCard title="Welcome back" subtitle="Log in to continue chatting">
-            <form onSubmit={submit} className="space-y-4">
-              <Input
-                label="Email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-
-              <Input
-                label="Password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-
-              <div className="flex justify-end -mt-1">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-indigo-400 hover:text-indigo-300 hover:underline"
-                >
-                  Forgot password?
-                </Link>
+      {/* --- RIGHT SIDE: 50% FORM PANEL --- */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative z-20 overflow-y-auto">
+        <div className="w-full max-w-[400px] animate-fade-in">
+          
+          {googleLoading ? (
+            <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 animate-fade-in">
+              <div className="relative w-16 h-16">
+                <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20 animate-pulse"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-t-indigo-600 dark:border-t-indigo-400 animate-spin"></div>
               </div>
-
-              <Button type="submit" loading={loading}>
-                Log in
-              </Button>
-
-              <div className="flex items-center gap-3 py-1">
-                <div className="flex-1 h-px bg-slate-800" />
-                <span className="text-xs text-slate-500">OR</span>
-                <div className="flex-1 h-px bg-slate-800" />
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Authenticating</h3>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Securing profile connection via Google...</p>
               </div>
+            </div>
+          ) : (
+            <AuthCard title="Welcome back" subtitle="Log in to continue chatting">
+              <form onSubmit={submit} className="space-y-4">
+                <Input label="Email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                
+                <div className="space-y-1 relative">
+                  <Input label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <div className="flex justify-end pt-1">
+                    <Link to="/forgot-password" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors duration-200 hover:underline">
+                      Forgot password?
+                    </Link>
+                  </div>
+                </div>
 
-              <GoogleAuthButton />
+                <div className="pt-3">
+                  <Button type="submit" loading={loading}>Log in</Button>
+                </div>
 
-              <p className="text-center text-sm text-slate-400">
-                Don't have an account?{" "}
-                <Link
-                  to="/register"
-                  className="text-indigo-400 font-medium hover:underline"
-                >
-                  Create one
-                </Link>
-              </p>
-            </form>
-          </AuthCard>
+                <div className="flex items-center gap-4 py-2">
+                  <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800 transition-colors duration-300" />
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 select-none">OR</span>
+                  <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800 transition-colors duration-300" />
+                </div>
+
+                <GoogleAuthButton setLoading={setGoogleLoading} />
+
+                <p className="text-center text-sm font-medium text-slate-500 dark:text-slate-400 pt-3">
+                  Don't have an account?{" "}
+                  <Link to="/register" className="text-indigo-600 dark:text-indigo-400 font-bold hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors duration-200 hover:underline ml-1">
+                    Create one
+                  </Link>
+                </p>
+              </form>
+            </AuthCard>
+          )}
+
         </div>
-
       </div>
     </div>
   );

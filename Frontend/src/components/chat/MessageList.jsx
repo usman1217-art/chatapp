@@ -9,6 +9,7 @@ function MessageList({ socket, setMessages }) {
   const bottomRef = useRef(null);
   const isInitialLoad = useRef(true);
 
+  // 1. Fetch initial chat history
   useEffect(() => {
     if (!selectedChat?._id) return;
     
@@ -28,6 +29,7 @@ function MessageList({ socket, setMessages }) {
     fetchChatHistory();
   }, [selectedChat?._id, setMessages]);
 
+  // 2. Auto-scroll to bottom behavior
   useEffect(() => {
     if (loading || !messages.length) return;
 
@@ -39,9 +41,11 @@ function MessageList({ socket, setMessages }) {
     }
   }, [messages, loading]);
 
+  // 3. --- REAL-TIME SOCKET LISTENERS ---
   useEffect(() => {
     if (!socket) return;
     
+    // A. Handle Deleted Messages
     const handleMessageDeleted = ({ messageId }) => {
       setMessages((prev) =>
         prev.map((m) =>
@@ -52,10 +56,38 @@ function MessageList({ socket, setMessages }) {
       );
     };
 
-    socket.on("messageDeleted", handleMessageDeleted);
-    return () => socket.off("messageDeleted", handleMessageDeleted);
-  }, [socket, setMessages]);
+    // B. Handle New Incoming Messages
+    const handleReceiveMessage = (newMessage) => {
+      // Check if the incoming message belongs to the currently active chat
+      const belongsToCurrentChat = selectedChat && (newMessage.chat === selectedChat._id || newMessage.chat?._id === selectedChat._id);
+      
+      if (belongsToCurrentChat) {
+        setMessages((prev) => {
+          // Prevent duplicates (in case the server accidentally sends it twice or optimistic UI overlaps)
+          if (prev.some((m) => m._id === newMessage._id)) return prev;
+          return [...prev, newMessage];
+        });
+      }
+    };
 
+    // Bind event listeners
+    socket.on("messageDeleted", handleMessageDeleted);
+    
+    // We bind to the most common event names to ensure the frontend catches the backend's broadcast
+    socket.on("receiveMessage", handleReceiveMessage);
+    socket.on("newMessage", handleReceiveMessage);
+    socket.on("getMessage", handleReceiveMessage);
+
+    // Cleanup listeners on unmount or chat change
+    return () => {
+      socket.off("messageDeleted", handleMessageDeleted);
+      socket.off("receiveMessage", handleReceiveMessage);
+      socket.off("newMessage", handleReceiveMessage);
+      socket.off("getMessage", handleReceiveMessage);
+    };
+  }, [socket, setMessages, selectedChat]);
+
+  // Loading State UI
   if (loading) {
     return (
       <div className="flex-1 flex flex-col justify-center items-center bg-slate-50 dark:bg-[#0a192f] gap-3 transition-colors duration-300">
@@ -70,6 +102,7 @@ function MessageList({ socket, setMessages }) {
     );
   }
 
+  // Active Chat Messages UI
   return (
     <div className="flex-1 overflow-y-auto p-5 space-y-2 bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-800">
       {messages.map((msg, index) => (
