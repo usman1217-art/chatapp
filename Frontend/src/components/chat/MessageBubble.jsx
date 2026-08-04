@@ -13,7 +13,6 @@ function MessageBubble({ message }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
-  // --- SWIPE GESTURE STATE ---
   const [swipeX, setSwipeX] = useState(0);
   const touchStartX = useRef(0);
   const isSwiping = useRef(false);
@@ -34,9 +33,8 @@ function MessageBubble({ message }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // --- TOUCH HANDLERS (Disabled for deleted messages) ---
   const handleTouchStart = (e) => {
-    if (message.deletedForEveryone) return; // Prevent swiping if deleted
+    if (message.deletedForEveryone) return;
     touchStartX.current = e.touches[0].clientX;
     isSwiping.current = true;
   };
@@ -59,7 +57,6 @@ function MessageBubble({ message }) {
     }
     setSwipeX(0); 
   };
-  // -------------------------------------------------------
 
   const handleDeleteForMe = async () => {
     try {
@@ -117,15 +114,24 @@ function MessageBubble({ message }) {
     }
   };
 
+  const handleScrollToMessage = (targetId) => {
+    const element = document.getElementById(`message-${targetId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      element.classList.add("bg-indigo-500/20", "dark:bg-indigo-500/30");
+      setTimeout(() => {
+        element.classList.remove("bg-indigo-500/20", "dark:bg-indigo-500/30");
+      }, 1500); 
+    }
+  };
+
   return (
     <div 
-      className={`flex ${own ? "justify-end" : "justify-start"} px-4 py-1.5 relative`}
+      id={`message-${message._id}`} 
+      className={`flex ${own ? "justify-end" : "justify-start"} px-4 py-1.5 relative rounded-2xl transition-colors duration-700`}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-      }}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Hidden Reply Icon that reveals on swipe */}
       {!message.deletedForEveryone && (
         <div 
           className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 p-2 rounded-full transition-opacity duration-200"
@@ -142,51 +148,46 @@ function MessageBubble({ message }) {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         style={{ transform: `translateX(${swipeX}px)` }}
-        className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-5 py-3 pr-9 shadow-sm flex flex-col relative z-10 ${isSwiping.current ? 'duration-0' : 'duration-300'} ${
+        className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-5 py-3.5 shadow-sm flex flex-col relative z-10 ${isSwiping.current ? 'duration-0' : 'duration-300'} ${
           own
             ? "bg-indigo-600 text-white rounded-br-sm"
-            : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 rounded-bl-sm"
+            : "bg-white/80 dark:bg-slate-800/70 backdrop-blur-md border border-white/40 dark:border-slate-700/50 text-slate-900 dark:text-slate-100 rounded-bl-sm"
         }`}
       >
-        {/* Actions Trigger UI */}
         {!message.deletedForEveryone && (isHovered || showMenu) && (
-          <div className="absolute top-2 right-2 z-30 flex items-center gap-1">
-            {/* Desktop Reply Button */}
+          <div className="absolute top-2 right-2 z-30 flex items-center gap-1 bg-black/10 dark:bg-black/30 backdrop-blur-md rounded-full p-0.5">
             <button 
               onClick={() => setReplyingTo(message)}
-              className={`hidden md:block p-1 rounded-full transition-colors cursor-pointer ${
-                own ? "bg-black/20 hover:bg-black/40 text-white" : "bg-slate-100 hover:bg-slate-200 dark:bg-black/40 dark:hover:bg-black/60 text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white"
-              }`}
+              className="p-1 rounded-full transition-colors cursor-pointer text-white hover:bg-white/20"
               title="Reply"
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
               </svg>
             </button>
 
-            {/* Menu Dropdown Toggle Button */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setShowMenu(true);
               }}
-              className={`p-1 rounded-full transition-colors cursor-pointer ${
-                own ? "bg-black/20 hover:bg-black/40 text-white" : "bg-slate-100 hover:bg-slate-200 dark:bg-black/40 dark:hover:bg-black/60 text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white"
-              }`}
+              className="p-1 rounded-full transition-colors cursor-pointer text-white hover:bg-white/20"
               title="Message options"
             >
-              <svg className="w-4 h-4 pointer-events-none" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 pointer-events-none drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
               </svg>
             </button>
           </div>
         )}
 
-        {/* Reply Quote Preview */}
         {message.replyTo && (
-          <div className={`border-l-4 p-2 rounded-md mb-2 text-xs opacity-80 max-w-full truncate ${
-            own ? "bg-black/20 border-indigo-300 text-slate-100" : "bg-slate-100 dark:bg-black/20 border-indigo-500 dark:border-indigo-400 text-slate-700 dark:text-slate-200"
-          }`}>
+          <div 
+            onClick={() => handleScrollToMessage(message.replyTo._id || message.replyTo)} 
+            className={`border-l-4 p-2 rounded-md mb-2 text-xs max-w-full truncate backdrop-blur-sm cursor-pointer opacity-90 hover:opacity-100 transition-opacity ${
+              own ? "bg-white/20 border-white/50 text-white" : "bg-slate-200/50 dark:bg-slate-900/50 border-indigo-500 text-slate-800 dark:text-slate-200"
+            }`}
+          >
             {message.replyTo.text || "📷 Media Attachment"}
           </div>
         )}
@@ -196,46 +197,47 @@ function MessageBubble({ message }) {
             src={message.image}
             alt="Attachment"
             onClick={() => setActiveLightboxImage(message.image)}
-            className="rounded-lg mb-2 max-w-full h-auto max-h-48 object-cover border border-black/5 dark:border-white/10 shadow-sm cursor-zoom-in hover:scale-[1.01] transition-transform duration-150"
+            className="rounded-xl mb-2 max-w-full h-auto max-h-56 object-cover shadow-sm cursor-zoom-in hover:scale-[1.01] transition-transform duration-200 border-2 border-white/20"
           />
         )}
 
-        <p className={`leading-relaxed whitespace-pre-wrap break-words text-sm md:text-base ${
+        <p className={`leading-relaxed whitespace-pre-wrap break-words text-sm md:text-base font-medium ${
           message.deletedForEveryone 
-            ? own ? "italic text-indigo-200" : "italic text-slate-500 dark:text-slate-400" 
+            ? own ? "italic text-indigo-200" : "italic text-slate-500 dark:text-slate-400 font-normal" 
             : ""
         }`}>
           {message.deletedForEveryone ? "This message was deleted" : message.text}
         </p>
 
+        {/* --- 12-HOUR TIME FORMAT --- */}
         <span
-          className={`text-[10px] block mt-1.5 self-end font-medium ${
+          className={`text-[10px] block mt-1.5 self-end font-bold tracking-wider ${
             own ? "text-indigo-200" : "text-slate-500 dark:text-slate-400"
           }`}
         >
-          {new Date(message.createdAt || Date.now()).toLocaleTimeString([], {
-            hour: '2-digit',
+          {new Date(message.createdAt || Date.now()).toLocaleTimeString('en-US', {
+            hour: 'numeric',
             minute: '2-digit',
+            hour12: true, // Forces 12-hour format
           })}
         </span>
       </div>
 
-      {/* --- TELEPORTED FULL SCREEN MODAL --- */}
+      {/* --- TELEPORTED FROSTED GLASS MODAL --- */}
       {showMenu && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
           onClick={(e) => {
             e.stopPropagation();
             setShowMenu(false); 
           }}
         >
           <div 
-            className="bg-white dark:bg-slate-900 w-full max-w-[320px] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-slide-up"
+            className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl w-full max-w-[300px] rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.25)] border border-white/50 dark:border-slate-700/50 flex flex-col overflow-hidden animate-scale-up"
             onClick={(e) => e.stopPropagation()} 
           >
-            {/* Modal Header */}
-            <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base tracking-tight">Message Options</h3>
+            <div className="flex justify-between items-center p-5 border-b border-slate-200/50 dark:border-slate-700/50">
+              <h3 className="font-black text-slate-800 dark:text-slate-100 text-sm uppercase tracking-widest">Options</h3>
               <button 
                 onClick={() => setShowMenu(false)} 
                 className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-2xl leading-none transition-colors cursor-pointer"
@@ -244,14 +246,13 @@ function MessageBubble({ message }) {
               </button>
             </div>
             
-            {/* Modal Body / Actions (Cancel Button Removed) */}
             <div className="p-4 flex flex-col gap-3">
               <button
                 onClick={() => {
                   setShowMenu(false);
                   handleDeleteForMe();
                 }}
-                className="w-full text-center px-4 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl transition-colors shadow-sm cursor-pointer"
+                className="w-full text-center px-4 py-3.5 bg-slate-100/50 hover:bg-slate-200 dark:bg-slate-800/50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-2xl transition-colors shadow-sm cursor-pointer"
               >
                 Delete for me
               </button>
@@ -262,7 +263,7 @@ function MessageBubble({ message }) {
                     setShowMenu(false);
                     handleDeleteForEveryone();
                   }}
-                  className="w-full text-center px-4 py-3 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold rounded-xl border border-red-200 dark:border-red-900/50 transition-colors shadow-sm cursor-pointer"
+                  className="w-full text-center px-4 py-3.5 bg-red-50/80 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold rounded-2xl border border-red-200/50 dark:border-red-900/30 transition-colors shadow-sm cursor-pointer"
                 >
                   Delete for everyone
                 </button>
