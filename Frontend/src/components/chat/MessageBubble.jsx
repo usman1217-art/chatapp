@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
 import { useSocket } from "../../context/SocketContext";
@@ -33,14 +34,15 @@ function MessageBubble({ message }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // --- TOUCH HANDLERS ---
+  // --- TOUCH HANDLERS (Disabled for deleted messages) ---
   const handleTouchStart = (e) => {
+    if (message.deletedForEveryone) return; // Prevent swiping if deleted
     touchStartX.current = e.touches[0].clientX;
     isSwiping.current = true;
   };
 
   const handleTouchMove = (e) => {
-    if (!isSwiping.current) return;
+    if (!isSwiping.current || message.deletedForEveryone) return;
     const currentX = e.touches[0].clientX;
     const diff = currentX - touchStartX.current;
     
@@ -50,12 +52,14 @@ function MessageBubble({ message }) {
   };
 
   const handleTouchEnd = () => {
+    if (message.deletedForEveryone) return;
     isSwiping.current = false;
     if (swipeX > 40) {
       setReplyingTo(message);
     }
     setSwipeX(0); 
   };
+  // -------------------------------------------------------
 
   const handleDeleteForMe = async () => {
     try {
@@ -119,25 +123,26 @@ function MessageBubble({ message }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
-        if (!showMenu) setShowMenu(false);
       }}
     >
       {/* Hidden Reply Icon that reveals on swipe */}
-      <div 
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 p-2 rounded-full transition-opacity duration-200"
-        style={{ opacity: swipeX > 20 ? 1 : 0 }}
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-        </svg>
-      </div>
+      {!message.deletedForEveryone && (
+        <div 
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 p-2 rounded-full transition-opacity duration-200"
+          style={{ opacity: swipeX > 20 ? 1 : 0 }}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+          </svg>
+        </div>
+      )}
 
       <div
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         style={{ transform: `translateX(${swipeX}px)` }}
-        className={`max-w-[70%] rounded-2xl px-5 py-3 pr-9 shadow-sm flex flex-col relative z-10 ${isSwiping.current ? 'duration-0' : 'duration-300'} ${
+        className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-5 py-3 pr-9 shadow-sm flex flex-col relative z-10 ${isSwiping.current ? 'duration-0' : 'duration-300'} ${
           own
             ? "bg-indigo-600 text-white rounded-br-sm"
             : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 rounded-bl-sm"
@@ -163,7 +168,7 @@ function MessageBubble({ message }) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setShowMenu(!showMenu);
+                setShowMenu(true);
               }}
               className={`p-1 rounded-full transition-colors cursor-pointer ${
                 own ? "bg-black/20 hover:bg-black/40 text-white" : "bg-slate-100 hover:bg-slate-200 dark:bg-black/40 dark:hover:bg-black/60 text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white"
@@ -174,38 +179,6 @@ function MessageBubble({ message }) {
                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
               </svg>
             </button>
-
-            {/* Fixed Placement Menu Context Panel */}
-            {showMenu && (
-              <div 
-                ref={menuRef}
-                className={`absolute top-7 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1 z-[100] text-xs font-medium animate-fade-in overflow-hidden ${
-                  own ? "right-0" : "left-0 md:right-auto md:left-0"
-                }`}
-              >
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    handleDeleteForMe();
-                  }}
-                  className="w-full text-left px-4 py-2.5 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  Delete for me
-                </button>
-
-                {canDeleteForEveryone && (
-                  <button
-                    onClick={() => {
-                      setShowMenu(false);
-                      handleDeleteForEveryone();
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-800 transition-colors font-bold cursor-pointer"
-                  >
-                    Delete for everyone
-                  </button>
-                )}
-              </div>
-            )}
           </div>
         )}
 
@@ -246,6 +219,59 @@ function MessageBubble({ message }) {
           })}
         </span>
       </div>
+
+      {/* --- TELEPORTED FULL SCREEN MODAL --- */}
+      {showMenu && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowMenu(false); 
+          }}
+        >
+          <div 
+            className="bg-white dark:bg-slate-900 w-full max-w-[320px] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-slide-up"
+            onClick={(e) => e.stopPropagation()} 
+          >
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base tracking-tight">Message Options</h3>
+              <button 
+                onClick={() => setShowMenu(false)} 
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-2xl leading-none transition-colors cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+            
+            {/* Modal Body / Actions (Cancel Button Removed) */}
+            <div className="p-4 flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setShowMenu(false);
+                  handleDeleteForMe();
+                }}
+                className="w-full text-center px-4 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl transition-colors shadow-sm cursor-pointer"
+              >
+                Delete for me
+              </button>
+
+              {canDeleteForEveryone && (
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    handleDeleteForEveryone();
+                  }}
+                  className="w-full text-center px-4 py-3 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold rounded-xl border border-red-200 dark:border-red-900/50 transition-colors shadow-sm cursor-pointer"
+                >
+                  Delete for everyone
+                </button>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

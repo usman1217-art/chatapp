@@ -93,6 +93,12 @@ function MessageInput() {
       const optimizedImg = await compressImage(file);
       setImage(optimizedImg);
       setImagePreview(URL.createObjectURL(optimizedImg));
+      
+      // Auto-focus the input after attaching an image
+      setTimeout(() => {
+        if (textInputRef.current) textInputRef.current.focus();
+      }, 0);
+      
       setIsCompressing(false);
     }
   };
@@ -101,6 +107,7 @@ function MessageInput() {
     setImage(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (textInputRef.current) textInputRef.current.focus();
   };
 
   const submit = async () => {
@@ -121,9 +128,17 @@ function MessageInput() {
     };
 
     setMessages((prev) => [...prev, optimisticMessage]);
+    
+    // Clear inputs and instantly grab the cursor back to keep mobile keyboards open
     setText("");
     clearImage();
     setReplyingTo(null);
+
+    setTimeout(() => {
+      if (textInputRef.current) {
+        textInputRef.current.focus();
+      }
+    }, 0);
 
     // 2. Prepare database payload
     const formData = new FormData();
@@ -159,16 +174,16 @@ function MessageInput() {
   };
 
   return (
-    <div className="border-t border-slate-800 bg-[#0a192f] p-4 flex flex-col gap-2 transition-colors duration-300 shrink-0">
+    <div className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a192f] p-3 sm:p-4 flex flex-col gap-2 transition-colors duration-300 shrink-0">
       
       {/* Reply UI Overlay */}
       {replyingTo && (
-        <div className="flex items-center justify-between bg-slate-800/60 border-l-4 border-indigo-500 px-4 py-2 rounded-md mb-1 animate-fade-in">
+        <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 border-l-4 border-indigo-500 px-4 py-2.5 rounded-lg mb-1 animate-fade-in shadow-sm border border-slate-200 dark:border-transparent">
           <div className="truncate text-xs">
-            <span className="text-indigo-400 font-bold block">Replying to message</span>
-            <span className="text-slate-300">{replyingTo.text || "📷 Image"}</span>
+            <span className="text-indigo-600 dark:text-indigo-400 font-bold block mb-0.5">Replying to message</span>
+            <span className="text-slate-600 dark:text-slate-300">{replyingTo.text || "📷 Image"}</span>
           </div>
-          <button onClick={() => setReplyingTo(null)} className="text-slate-400 hover:text-white text-lg font-bold ml-2">
+          <button onClick={() => setReplyingTo(null)} className="text-slate-400 hover:text-slate-800 dark:hover:text-white text-xl font-bold ml-2 transition-colors">
             &times;
           </button>
         </div>
@@ -176,15 +191,15 @@ function MessageInput() {
 
       {/* Tiny Image Preview Thumbnail */}
       {imagePreview && (
-        <div className="relative self-start mb-1 ml-12">
+        <div className="relative self-start mb-1 ml-12 animate-slide-up">
           <img 
             src={imagePreview} 
             alt="Upload Preview" 
-            className="h-20 w-auto rounded-lg object-cover border border-slate-700 shadow-sm" 
+            className="h-20 w-auto rounded-lg object-cover border-2 border-slate-200 dark:border-slate-700 shadow-sm" 
           />
           <button 
             onClick={clearImage}
-            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 shadow-md transition-colors"
+            className="absolute -top-2.5 -right-2.5 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 shadow-md transition-all border-2 border-white dark:border-[#0a192f]"
             title="Remove image"
           >
             &times;
@@ -192,7 +207,7 @@ function MessageInput() {
         </div>
       )}
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {/* Hidden File Input */}
         <input
           type="file"
@@ -206,11 +221,11 @@ function MessageInput() {
         <button
           disabled={isCompressing}
           onClick={() => fileInputRef.current.click()}
-          className="p-2.5 text-slate-400 hover:text-indigo-400 bg-slate-800 hover:bg-slate-700 rounded-full transition-all shrink-0 border border-slate-700/60 disabled:opacity-40"
+          className="w-12 h-12 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-all shrink-0 flex items-center justify-center border border-slate-200 dark:border-slate-700/60 shadow-sm disabled:opacity-40 cursor-pointer"
           title="Attach Image"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </button>
 
@@ -220,20 +235,24 @@ function MessageInput() {
           value={text}
           onChange={(e) => handleTyping(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
-          className="flex-1 bg-slate-800 border border-slate-700 focus:border-indigo-500 text-slate-100 px-5 py-3 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder-slate-400 shadow-inner"
+          className="flex-1 min-w-0 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-500 dark:focus:border-indigo-500 text-slate-900 dark:text-slate-100 px-4 sm:px-5 py-3 rounded-2xl sm:rounded-full focus:outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-500/20 transition-all placeholder-slate-500 dark:placeholder-slate-400 shadow-inner font-medium"
           placeholder={isCompressing ? "Compressing image..." : "Type a message..."}
           disabled={isCompressing}
         />
 
-        {/* Send Button Icon */}
+        {/* --- HORIZONTAL PILL SEND BUTTON (WITH AIRPLANE ICON) --- */}
         <button
           onClick={submit}
           disabled={(!text.trim() && !image) || isCompressing}
-          className="p-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full transition-all shadow-sm flex items-center justify-center shrink-0"
+          className="h-12 px-4 sm:px-6 md:h-14 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 shrink-0 font-bold tracking-wide active:scale-95 cursor-pointer"
           title="Send Message"
         >
-          <svg className="w-5 h-5 translate-x-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+          {/* Text is hidden on tiny phones, shows as a standard horizontal button on slightly larger screens */}
+          <span className="hidden sm:inline">Send</span>
+          
+          {/* Horizontal Paper Airplane Icon */}
+          <svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3.478 2.404a.75.75 0 00-.926.941l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.404z" />
           </svg>
         </button>
       </div>

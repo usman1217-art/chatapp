@@ -64,7 +64,9 @@ function Profile() {
 
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
-  const { setUser: setGlobalUser } = useAuth(); 
+  
+  // 🔴 FIX: Extracted `logout` from useAuth so we can actually destroy backend cookies
+  const { logout, setUser: setGlobalUser } = useAuth(); 
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -110,14 +112,13 @@ function Profile() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Read the file as a data URL to show in the cropper
     const reader = new FileReader();
     reader.addEventListener("load", () => {
       setCropModal({ show: true, imageSrc: reader.result });
     });
     reader.readAsDataURL(file);
     
-    e.target.value = null; // Reset input so the same file can be selected again if needed
+    e.target.value = null; 
   };
 
   const onCropComplete = (croppedArea, croppedAreaPixels) => {
@@ -127,16 +128,13 @@ function Profile() {
   const handleCropSave = async () => {
     setIsUploading(true);
     try {
-      // Generate the cropped image file
       const croppedFile = await getCroppedImg(cropModal.imageSrc, croppedAreaPixels);
 
-      // Optimistic UI update
       const localImageUrl = URL.createObjectURL(croppedFile);
       setUser((prev) => ({ ...prev, avatar: localImageUrl }));
       setCropModal({ show: false, imageSrc: null });
-      setZoom(1); // reset zoom for next time
+      setZoom(1); 
 
-      // Upload to server
       const formData = new FormData();
       formData.append("image", croppedFile);
 
@@ -225,16 +223,29 @@ function Profile() {
     }
   };
 
+  // 🔴 FIX: Proper logout execution
   const handleLogout = () => {
     setConfirmModal({
       show: true,
       message: "Are you sure you want to sign out?",
-      onConfirm: () => {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("token");
-        if (setGlobalUser) setGlobalUser(null);
-        setConfirmModal({ show: false, message: "", onConfirm: null });
-        navigate("/login", { replace: true });
+      onConfirm: async () => {
+        try {
+          // 1. Call the backend to destroy the secure HTTP-Only cookie
+          if (logout) {
+            await logout();
+          } else {
+            // Fallback clear just in case logout fails
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("token");
+            if (setGlobalUser) setGlobalUser(null);
+          }
+        } catch (error) {
+          console.error("Logout failed", error);
+        } finally {
+          // 2. Redirect to login page
+          setConfirmModal({ show: false, message: "", onConfirm: null });
+          navigate("/login", { replace: true });
+        }
       }
     });
   };

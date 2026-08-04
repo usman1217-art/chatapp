@@ -51,6 +51,9 @@ function ChatWindow() {
     (participant) => (participant._id || participant) !== (user?._id || user)
   );
 
+  // Safely resolve the avatar URL to pass into the lightbox
+  const displayAvatar = otherUser?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser?.name || "U")}&background=4f46e5&color=fff`;
+
   const handleDownloadImage = async (e, imageUrl) => {
     e.stopPropagation();
     try {
@@ -78,7 +81,6 @@ function ChatWindow() {
       <div className="flex flex-col flex-1 overflow-hidden relative">
         
         {/* --- LOCKED MOBILE HEADER LAYER --- */}
-        {/* Pinned with complete hard absolute tracking on mobile layout screens to neutralize keyboard viewport resizes */}
         <div
           onClick={() => setViewingProfile(!viewingProfile)}
           className="cursor-pointer max-md:absolute max-md:top-0 max-md:left-0 max-md:right-0 sticky top-0 z-30 shrink-0"
@@ -87,7 +89,6 @@ function ChatWindow() {
         </div>
 
         {/* --- MESSAGE SCROLL VIEW CONTAINER --- */}
-        {/* Added a relative container shell with a padding offset layer matching the mobile header metrics exactly */}
         <div className="flex-1 flex flex-col min-h-0 max-md:pt-[65px] relative">
           <MessageList socket={socket} setMessages={setMessages} />
         </div>
@@ -104,10 +105,13 @@ function ChatWindow() {
           </div>
 
           <div className="flex flex-col items-center text-center gap-4">
+            {/* Added onClick to open Lightbox, plus cursor-pointer and hover scale effect */}
             <img 
-              src={otherUser?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser?.name || "U")}&background=4f46e5&color=fff`} 
+              src={displayAvatar} 
               alt="Avatar" 
-              className="w-24 h-24 rounded-full object-cover border-4 border-slate-100 dark:border-slate-700 shadow-md bg-slate-200 dark:bg-slate-800"
+              onClick={() => setActiveLightboxImage(displayAvatar)}
+              className="w-24 h-24 rounded-full object-cover border-4 border-slate-100 dark:border-slate-700 shadow-md bg-slate-200 dark:bg-slate-800 cursor-pointer hover:scale-105 transition-transform duration-200"
+              title="View full picture"
             />
             <div className="w-full min-w-0">
               <h4 className="text-xl font-bold truncate">{otherUser?.name || "Chat User"}</h4>

@@ -52,15 +52,18 @@ function ChatHeader() {
   };
 
   return (
-    <div className="border-b border-slate-800 bg-[#0a192f]/90 backdrop-blur-md p-3 md:p-4 flex items-center justify-between transition-colors duration-300 z-10 shadow-sm shrink-0">
+    <div className="border-b border-slate-200 dark:border-slate-800 bg-white/85 dark:bg-[#0a192f]/85 backdrop-blur-xl p-3 md:p-4 flex items-center justify-between transition-colors duration-300 z-10 shadow-sm shrink-0">
       
       {/* Left side: Back Arrow, Avatar, and Status */}
-      <div className="flex items-center gap-2 md:gap-4">
+      <div className="flex items-center gap-3 md:gap-4">
         
         {/* Mobile Back Arrow (Hidden on Desktop) */}
         <button
-          onClick={() => setSelectedChat(null)}
-          className="md:hidden p-2 -ml-2 text-slate-400 hover:text-white transition-colors cursor-pointer rounded-full active:bg-slate-800"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent opening profile when clicking back
+            setSelectedChat(null);
+          }}
+          className="md:hidden p-2 -ml-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer rounded-full active:scale-95"
           title="Back to Chats"
         >
           <svg className="w-6 h-6 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -68,7 +71,7 @@ function ChatHeader() {
           </svg>
         </button>
 
-        <div className="relative">
+        <div className="relative shrink-0">
           <img
             src={
               otherUser?.avatar ||
@@ -77,43 +80,41 @@ function ChatHeader() {
               )}&background=4f46e5&color=fff`
             }
             alt={otherUser?.name}
-            className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-slate-700 shadow-sm bg-slate-800"
+            className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800"
           />
           
           {isOnline && (
-            <span className="absolute bottom-0 right-0 w-3 h-3 md:w-3.5 md:h-3.5 bg-green-500 border-2 border-[#0a192f] rounded-full"></span>
+            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 md:w-4 md:h-4 bg-emerald-500 border-2 border-white dark:border-[#0a192f] rounded-full shadow-sm"></span>
           )}
         </div>
 
-        <div className="flex flex-col justify-center">
-          <h2 className="font-bold text-base md:text-lg text-slate-100 leading-tight">
+        <div className="flex flex-col justify-center min-w-0">
+          <h2 className="font-bold text-base md:text-lg text-slate-900 dark:text-slate-100 leading-tight truncate">
             {otherUser?.name || "User"}
           </h2>
           
-          <p
-            className={`text-xs md:text-sm font-medium mt-0.5 transition-colors flex items-center gap-1 ${
-              isTyping
-                ? "text-indigo-400"
-                : isOnline
-                ? "text-green-400"
-                : "text-slate-400"
-            }`}
-          >
+          <div className="flex items-center mt-0.5 h-4">
             {isTyping ? (
-              <>
+              <p className="text-xs md:text-sm font-bold text-indigo-600 dark:text-indigo-400 transition-colors flex items-center gap-1.5 tracking-wide">
                 typing
-                <span className="flex gap-0.5">
-                  <span className="typing-dot w-1 h-1 rounded-full bg-indigo-400 inline-block" />
-                  <span className="typing-dot w-1 h-1 rounded-full bg-indigo-400 inline-block" />
-                  <span className="typing-dot w-1 h-1 rounded-full bg-indigo-400 inline-block" />
+                <span className="flex gap-0.5 items-center justify-center translate-y-[2px]">
+                  <span className="w-1 h-1 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-bounce" />
+                  <span className="w-1 h-1 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-bounce" style={{ animationDelay: "0.15s" }} />
+                  <span className="w-1 h-1 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-bounce" style={{ animationDelay: "0.3s" }} />
                 </span>
-              </>
-            ) : isOnline ? (
-              "Online"
+              </p>
             ) : (
-              "Offline"
+              <p
+                className={`text-xs md:text-sm font-medium transition-colors truncate ${
+                  isOnline
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-slate-500 dark:text-slate-400"
+                }`}
+              >
+                {isOnline ? "Online" : "Offline"}
+              </p>
             )}
-          </p>
+          </div>
         </div>
       </div>
 
@@ -121,19 +122,25 @@ function ChatHeader() {
       <div className="flex items-center gap-1 md:gap-2">
         {/* Delete Chat Button */}
         <button
-          onClick={handleDeleteChat}
-          className="p-2 md:p-2.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all duration-200 cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent opening profile when deleting
+            handleDeleteChat();
+          }}
+          className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full transition-all duration-200 cursor-pointer active:scale-95"
           title="Delete Chat"
         >
           <svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
         </button>
 
         {/* Close Chat Window Button (Hidden on Mobile as Back Arrow handles this) */}
         <button
-          onClick={() => setSelectedChat(null)}
-          className="hidden md:block p-2.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-full transition-all duration-200 cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedChat(null);
+          }}
+          className="hidden md:flex items-center justify-center p-2.5 text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all duration-200 cursor-pointer active:scale-95"
           title="Close Chat"
         >
           <svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
