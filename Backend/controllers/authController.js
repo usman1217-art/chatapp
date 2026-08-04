@@ -190,20 +190,42 @@ const googleLogin = async (req, res) => {
     });
 
     if (!user) {
+      let userId;
+
+      while (true) {
+        userId =
+          "CHAT-" +
+          Math.random()
+            .toString(36)
+            .substring(2, 8)
+            .toUpperCase();
+
+        const exists = await User.findOne({ userId });
+
+        if (!exists) break;
+      }
+
       user = await User.create({
         name: payload.name,
         email: payload.email,
         password: "",
         avatar: payload.picture,
+        userId,
         isGoogleUser: true,
+        isVerified: true,
       });
     }
 
     const accessToken = generateAccessToken(user._id);
-
     const refreshToken = generateRefreshToken(user._id);
 
-    user.refreshToken = refreshToken;
+    // Remove old refresh tokens (optional)
+    user.refreshTokens = [];
+
+    // Save latest refresh token
+    user.refreshTokens.push({
+      token: refreshToken,
+    });
 
     await user.save();
 
@@ -214,17 +236,22 @@ const googleLogin = async (req, res) => {
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
       path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000, 
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
+
     const userResponse = await User.findById(user._id).select(
-      "-password -refreshToken"
+      "-password -refreshTokens -verificationToken -resetPasswordToken"
     );
 
-    res.json({
+    res.status(200).json({
+      message: "Google login successful",
       accessToken,
       user: userResponse,
     });
+
   } catch (err) {
+    console.error(err);
+
     res.status(500).json({
       message: err.message,
     });

@@ -19,7 +19,7 @@ function GoogleAuthButton() {
 
       toast.success("Welcome!");
 
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (err) {
       toast.error(
         err.response?.data?.message || "Google sign-in failed"

@@ -24,7 +24,7 @@ function Register() {
     try {
       await registerUser({ name, email, password });
       toast.success("Registration successful! Check your email to verify your account.");
-      navigate("/login");
+      navigate("/login", { replace: true });
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed");
     } finally {

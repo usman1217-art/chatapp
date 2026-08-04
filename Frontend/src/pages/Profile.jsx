@@ -152,7 +152,7 @@ function Profile() {
         localStorage.removeItem("token");
         if (setGlobalUser) setGlobalUser(null);
         setConfirmModal({ show: false, message: "", onConfirm: null });
-        navigate("/login");
+        navigate("/login", { replace: true });
       }
     });
   };

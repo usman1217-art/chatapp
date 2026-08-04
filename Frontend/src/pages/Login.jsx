@@ -35,7 +35,7 @@ function Login() {
       login(token, userRes.data);
 
       toast.success("Welcome back!");
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (err) {
       toast.error(err.response?.data?.message || "Unable to log in");
     } finally {

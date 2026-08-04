@@ -20,7 +20,7 @@ function ResetPassword() {
     try {
       await resetPassword(token, { password });
       toast.success("Password updated. Please log in.");
-      navigate("/login");
+      navigate("/login", { replace: true });
     } catch (err) {
       toast.error(err.response?.data?.message || "Unable to reset password");
     } finally {

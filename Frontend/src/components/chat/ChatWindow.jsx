@@ -4,18 +4,34 @@ import MessageInput from "./MessageInput";
 import { useChat } from "../../context/ChatContext";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
+import { useEffect } from "react";
 
 function ChatWindow() {
   const { user } = useAuth();
   const { socket } = useSocket();
-  const { 
-    selectedChat, 
-    viewingProfile, 
-    setViewingProfile, 
-    activeLightboxImage, 
+  const {
+    selectedChat,
+    setSelectedChat,
+    viewingProfile,
+    setViewingProfile,
+    activeLightboxImage,
     setActiveLightboxImage,
-    setMessages 
+    setMessages,
   } = useChat();
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (selectedChat) {
+        setSelectedChat(null);
+      }
+    };
+  
+    window.addEventListener("popstate", handlePopState);
+  
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [selectedChat, setSelectedChat]);
 
   if (!selectedChat) {
     return (

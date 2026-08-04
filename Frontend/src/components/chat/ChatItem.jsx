@@ -13,7 +13,11 @@ function ChatItem({ chat }) {
 
   const handleSelectChat = () => {
     if (selectedChat?._id === chat._id) return;
-    setMessages([]); // Wipes state immediately to kill flash artifact
+  
+    // Create a history entry so Android back closes the chat
+    window.history.pushState({ chatOpen: true }, "");
+  
+    setMessages([]);
     setSelectedChat(chat);
   };
 
