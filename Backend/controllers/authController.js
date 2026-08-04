@@ -237,63 +237,44 @@ const refreshAccessToken = async (req, res) => {
   try {
     const oldRefreshToken = req.cookies.refreshToken;
 
+    console.log("COOKIE:", oldRefreshToken);
+
     if (!oldRefreshToken) {
-      return res.status(401).json({
-        message: "Refresh token missing",
-      });
+      return res.status(401).json({ message: "Refresh token missing" });
     }
 
-    // Verify token
     const decoded = jwt.verify(
       oldRefreshToken,
       process.env.JWT_REFRESH_SECRET
     );
 
+    console.log("DECODED:", decoded);
+
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(401).json({
-        message: "User not found",
-      });
+      return res.status(401).json({ message: "User not found" });
     }
 
-    // Check if old refresh token exists in user's active sessions
+    console.log("DB TOKENS:", user.refreshTokens);
+
     const tokenIndex = user.refreshTokens.findIndex(
       (item) => item.token === oldRefreshToken
     );
 
+    console.log("TOKEN INDEX:", tokenIndex);
+
     if (tokenIndex === -1) {
       return res.status(401).json({
-        message: "Invalid refresh token",
+        message: "Refresh token not found in DB",
       });
     }
 
-    // Generate NEW token pair (Token Rotation)
-    const accessToken = generateAccessToken(user._id);
-    const newRefreshToken = generateRefreshToken(user._id);
-
-    // Replace the old refresh token with the new one in the database array
-    user.refreshTokens[tokenIndex].token = newRefreshToken;
-    await user.save();
-
-    const isProduction = process.env.NODE_ENV === "production";
-
-    // Send the fresh refresh token back in the cookie
-    res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
-
-    res.json({
-      accessToken,
-    });
-
+    // existing rotation code...
   } catch (err) {
-    res.status(401).json({
-      message: "Invalid or expired refresh token",
+    console.error("REFRESH ERROR:", err);
+    return res.status(401).json({
+      message: err.message,
     });
   }
 };

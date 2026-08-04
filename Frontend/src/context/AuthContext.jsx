@@ -15,46 +15,28 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const checkAuth = async (isRetry = false) => {
-    const savedToken = localStorage.getItem("accessToken");
-    
-    // Optimization: If no token exists at all, skip the refresh call immediately
-    if (!savedToken) {
-      setLoading(false);
-      return;
-    }
-
     try {
       const tokenRes = await refreshToken();
       const token = tokenRes.data.accessToken;
+  
       localStorage.setItem("accessToken", token);
-      
+  
       const userRes = await getCurrentUser();
       setUser(userRes.data);
-      setLoading(false);
     } catch (err) {
       const status = err?.response?.status;
-
-      // Transient failure (network drop, cold-starting backend, rate limit) —
-      // retry once before giving up, instead of instantly logging out.
+  
       if (status !== 401 && !isRetry) {
         setTimeout(() => checkAuth(true), 1500);
-        return; // keep the spinner up until the retry resolves
+        return;
       }
-
-      // FIX (logout on refresh): this used to clear the session on ANY error
-      // from /auth/refresh — including a dropped connection, the backend
-      // still waking up (Render free tier), or hitting the rate limiter —
-      // which logged a perfectly valid user out just for refreshing the
-      // page. Only treat it as "logged out" when the server explicitly says
-      // the token itself is invalid/expired (401).
-      if (status === 401) {
-        localStorage.removeItem("accessToken");
-        setUser(null);
-      }
+  
+      localStorage.removeItem("accessToken");
+      setUser(null);
+    } finally {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     checkAuth();
   }, []);
