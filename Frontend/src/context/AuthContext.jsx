@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useRef,
 } from "react";
 
 import { refreshToken, logoutUser } from "../services/authApi";
@@ -14,30 +15,37 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Prevent duplicate auth check
+  const hasChecked = useRef(false);
+
   const checkAuth = async (isRetry = false) => {
     try {
       const tokenRes = await refreshToken();
       const token = tokenRes.data.accessToken;
-  
+
       localStorage.setItem("accessToken", token);
-  
+
       const userRes = await getCurrentUser();
       setUser(userRes.data);
     } catch (err) {
       const status = err?.response?.status;
-  
+
       if (status !== 401 && !isRetry) {
         setTimeout(() => checkAuth(true), 1500);
         return;
       }
-  
+
       localStorage.removeItem("accessToken");
       setUser(null);
     } finally {
       setLoading(false);
     }
   };
+
   useEffect(() => {
+    if (hasChecked.current) return;
+
+    hasChecked.current = true;
     checkAuth();
   }, []);
 
@@ -50,6 +58,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await logoutUser();
     } catch {}
+
     localStorage.removeItem("accessToken");
     setUser(null);
   };

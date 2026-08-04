@@ -235,44 +235,44 @@ const googleLogin = async (req, res) => {
 // ================= REFRESH TOKEN =================
 const refreshAccessToken = async (req, res) => {
   try {
-    const oldRefreshToken = req.cookies.refreshToken;
+    const refreshToken = req.cookies.refreshToken;
 
-    console.log("COOKIE:", oldRefreshToken);
-
-    if (!oldRefreshToken) {
-      return res.status(401).json({ message: "Refresh token missing" });
+    if (!refreshToken) {
+      return res.status(401).json({
+        message: "Refresh token missing",
+      });
     }
 
     const decoded = jwt.verify(
-      oldRefreshToken,
+      refreshToken,
       process.env.JWT_REFRESH_SECRET
     );
-
-    console.log("DECODED:", decoded);
 
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
-    }
-
-    console.log("DB TOKENS:", user.refreshTokens);
-
-    const tokenIndex = user.refreshTokens.findIndex(
-      (item) => item.token === oldRefreshToken
-    );
-
-    console.log("TOKEN INDEX:", tokenIndex);
-
-    if (tokenIndex === -1) {
       return res.status(401).json({
-        message: "Refresh token not found in DB",
+        message: "User not found",
       });
     }
 
-    // existing rotation code...
+    const exists = user.refreshTokens.some(
+      (item) => item.token === refreshToken
+    );
+
+    if (!exists) {
+      return res.status(401).json({
+        message: "Invalid refresh token",
+      });
+    }
+
+    const accessToken = generateAccessToken(user._id);
+
+    return res.json({
+      accessToken,
+    });
+
   } catch (err) {
-    console.error("REFRESH ERROR:", err);
     return res.status(401).json({
       message: err.message,
     });
