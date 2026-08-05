@@ -1,3 +1,5 @@
+import logo from "../../../public/image.png";
+
 function AuthCard({ title, subtitle, children }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a192f] px-4 relative overflow-hidden">
@@ -8,9 +10,9 @@ function AuthCard({ title, subtitle, children }) {
       <div className="w-full max-w-md relative z-10 animate-fade-in">
 
         <div className="flex items-center gap-2 text-xl font-bold mb-6 justify-center text-slate-100">
-          <span className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
-            💬
-          </span>
+          {/* <span className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
+          </span> */}
+            <img src={logo} alt="Logo" className="w-8 h-8" />
           Chat App
         </div>
 
