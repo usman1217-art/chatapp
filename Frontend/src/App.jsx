@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import { useState, useEffect } from "react"; // 👈 Imported hooks
+import { useState, useEffect } from "react";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -10,8 +10,8 @@ import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 
 import ProtectedRoute from "./components/common/ProtectedRoute";
-import VoiceCallModal from "./components/chat/VoiceCallModal"; // 👈 Imported Call Modal
-import { useSocket } from "./context/SocketContext"; // 👈 Imported Socket Context
+import VoiceCallModal from "./components/chat/VoiceCallModal";
+import { useSocket } from "./context/SocketContext";
 
 function App() {
   const { socket } = useSocket();
@@ -19,20 +19,67 @@ function App() {
   // --- GLOBAL INCOMING CALL STATE ---
   const [incomingCall, setIncomingCall] = useState(null);
 
-  // --- GLOBAL INCOMING CALL LISTENER ---
+  // --- AUTOMATED BROWSER NOTIFICATION PERMISSION REQUEST ---
+  useEffect(() => {
+    const requestNotificationPermission = async () => {
+      if (!("Notification" in window)) {
+        console.log("This browser does not support desktop alerts.");
+        return;
+      }
+      if (Notification.permission === "default") {
+        await Notification.requestPermission();
+      }
+    };
+    requestNotificationPermission();
+  }, []);
+
+  // --- GLOBAL SOCKET NOTIFICATION LISTENERS ---
   useEffect(() => {
     if (!socket) return;
 
-    // This listener stays active across all pages (Home, Profile, etc.)
+    // 1. Listen for background text messages
+    socket.on("receiveMessage", (message) => {
+      // Trigger a system alert ONLY if the user is currently tabbed out
+      if (document.hidden && Notification.permission === "granted") {
+        const notification = new Notification(`New Message`, {
+          body: message.text || "📷 Sent an attachment",
+          tag: "chat-msg-alert",
+          renotify: true,
+        });
+
+        notification.onclick = (e) => {
+          e.preventDefault();
+          window.focus();
+          notification.close();
+        };
+      }
+    });
+
+    // 2. Listen for background voice calls
     socket.on("incoming-call", ({ signal, from, name }) => {
       setIncomingCall({
         isCaller: false,
         signal,
         caller: { _id: from, name }
       });
+
+      // Trigger a lingering push alert if tabbed out
+      if (document.hidden && Notification.permission === "granted") {
+        const callNotification = new Notification(`📞 Incoming Call`, {
+          body: `${name} is calling you...`,
+          requireInteraction: true, // Persists on screen until interacted with
+        });
+
+        callNotification.onclick = (e) => {
+          e.preventDefault();
+          window.focus();
+          callNotification.close();
+        };
+      }
     });
 
     return () => {
+      socket.off("receiveMessage");
       socket.off("incoming-call");
     };
   }, [socket]);
