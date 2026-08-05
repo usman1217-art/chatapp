@@ -31,10 +31,6 @@ const socketHandler = (io) => {
     });
 
     // Typing
-    // FIX: previously this only told the receiver "someone is typing" with no
-    // sender/chat info, so the frontend lit up the typing indicator in every
-    // open chat window regardless of who was actually typing. Now we forward
-    // who is typing and in which chat so the client can filter correctly.
     socket.on("typing", ({ receiverId, chatId }) => {
       const receiverIdStr = receiverId?.toString();
       const senderId = socketUsers.get(socket.id);
@@ -58,7 +54,7 @@ const socketHandler = (io) => {
       }
     });
 
-    // Read Receipt
+    // Read Receipt (Legacy)
     socket.on("messageRead", (data) => {
       const receiverIdStr = data.receiverId?.toString();
       const receiverSockets = onlineUsers.get(receiverIdStr);
@@ -69,7 +65,19 @@ const socketHandler = (io) => {
       }
     });
 
-    // Delete For Everyone (Fixed to ensure string matching evaluation)
+    // --- NEW: Read Receipts (`markAsRead` synced with MessageList.jsx) ---
+    socket.on("markAsRead", ({ chatId, readerId }) => {
+      // Notify other online users that messages in this chat have been read
+      for (const [userId, socketIds] of onlineUsers.entries()) {
+        if (userId !== readerId?.toString()) {
+          socketIds.forEach((socketId) => {
+            io.to(socketId).emit("messagesRead", { chatId });
+          });
+        }
+      }
+    });
+
+    // Delete For Everyone
     socket.on("deleteMessage", (data) => {
       const receiverIdStr = data.receiverId?.toString();
       const receiverSockets = onlineUsers.get(receiverIdStr);
@@ -81,6 +89,44 @@ const socketHandler = (io) => {
         });
       }
     });
+
+    // --- NEW: WebRTC Voice Call Signaling Events ---
+    socket.on("call-user", ({ userToCall, signalData, from, name }) => {
+      const targetSockets = onlineUsers.get(userToCall?.toString());
+      if (targetSockets) {
+        targetSockets.forEach((socketId) => {
+          io.to(socketId).emit("incoming-call", { signal: signalData, from, name });
+        });
+      }
+    });
+
+    socket.on("answer-call", (data) => {
+      const targetSockets = onlineUsers.get(data.to?.toString());
+      if (targetSockets) {
+        targetSockets.forEach((socketId) => {
+          io.to(socketId).emit("call-accepted", data.signal);
+        });
+      }
+    });
+
+    socket.on("ice-candidate", ({ to, candidate }) => {
+      const targetSockets = onlineUsers.get(to?.toString());
+      if (targetSockets) {
+        targetSockets.forEach((socketId) => {
+          io.to(socketId).emit("ice-candidate", candidate);
+        });
+      }
+    });
+
+    socket.on("hangup", ({ to }) => {
+      const targetSockets = onlineUsers.get(to?.toString());
+      if (targetSockets) {
+        targetSockets.forEach((socketId) => {
+          io.to(socketId).emit("hangup");
+        });
+      }
+    });
+    // ---------------------------------------------
 
     // Disconnect
     socket.on("disconnect", () => {

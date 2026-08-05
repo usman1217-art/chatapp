@@ -156,7 +156,6 @@ function MessageBubble({ message }) {
       >
         {!message.deletedForEveryone && (isHovered || showMenu) && (
           <div className="absolute top-2 right-2 z-30 flex items-center gap-1 bg-black/10 dark:bg-black/30 backdrop-blur-md rounded-full p-0.5">
-            {/* Hidden on mobile screens, visible on desktop */}
             <button 
               onClick={() => setReplyingTo(message)}
               className="hidden md:block p-1 rounded-full transition-colors cursor-pointer text-white hover:bg-white/20"
@@ -210,6 +209,7 @@ function MessageBubble({ message }) {
           {message.deletedForEveryone ? "This message was deleted" : message.text}
         </p>
 
+        {/* --- TIMESTAMP AND READ RECEIPTS ROW --- */}
         <div className="flex items-center justify-end gap-1.5 mt-1.5">
           <span
             className={`text-[10px] font-bold tracking-wider ${
@@ -223,6 +223,7 @@ function MessageBubble({ message }) {
             })}
           </span>
           
+          {/* 🔴 FIX: ONLY show the read receipt checkmarks wrapper if the message belongs to YOU */}
           {own && !message.deletedForEveryone && (
             <div className="flex -ml-0.5">
               <svg 

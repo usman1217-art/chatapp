@@ -2,7 +2,7 @@ import { useChat } from "../../context/ChatContext";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
 
-function ChatHeader() {
+function ChatHeader({ onStartCall }) {
   const { selectedChat, setSelectedChat, setChats } = useChat();
   const { user } = useAuth();
   const { onlineUsers, isTyping } = useSocket();
@@ -27,8 +27,6 @@ function ChatHeader() {
 
     try {
       const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-
-      console.log("Sending delete request for chat ID:", chatId);
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/chats/${chatId}`, {
         method: "DELETE",
@@ -60,7 +58,7 @@ function ChatHeader() {
         {/* Mobile Back Arrow (Hidden on Desktop) */}
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Prevent opening profile when clicking back
+            e.stopPropagation();
             setSelectedChat(null);
           }}
           className="md:hidden p-2 -ml-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer rounded-full active:scale-95"
@@ -120,10 +118,25 @@ function ChatHeader() {
 
       {/* Right side: Action Buttons */}
       <div className="flex items-center gap-1 md:gap-2">
+        
+        {/* --- VOICE CALL BUTTON --- */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onStartCall) onStartCall();
+          }}
+          className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-full transition-all duration-200 cursor-pointer active:scale-95"
+          title="Start Voice Call"
+        >
+          <svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+        </button>
+
         {/* Delete Chat Button */}
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Prevent opening profile when deleting
+            e.stopPropagation();
             handleDeleteChat();
           }}
           className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full transition-all duration-200 cursor-pointer active:scale-95"
@@ -134,7 +147,7 @@ function ChatHeader() {
           </svg>
         </button>
 
-        {/* Close Chat Window Button (Hidden on Mobile as Back Arrow handles this) */}
+        {/* Close Chat Window Button */}
         <button
           onClick={(e) => {
             e.stopPropagation();
