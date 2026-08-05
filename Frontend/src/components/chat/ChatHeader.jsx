@@ -50,10 +50,10 @@ function ChatHeader({ onStartCall }) {
   };
 
   return (
-    <div className="border-b border-slate-200 dark:border-slate-800 bg-white/85 dark:bg-[#0a192f]/85 backdrop-blur-xl p-3 md:p-4 flex items-center justify-between transition-colors duration-300 z-10 shadow-sm shrink-0">
+    <div className="border-b border-slate-200 dark:border-slate-800 bg-white/85 dark:bg-[#0a192f]/85 backdrop-blur-xl p-3 md:p-4 flex items-center justify-between transition-colors duration-300 z-10 shadow-sm shrink-0 w-full gap-2">
       
       {/* Left side: Back Arrow, Avatar, and Status */}
-      <div className="flex items-center gap-3 md:gap-4">
+      <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
         
         {/* Mobile Back Arrow (Hidden on Desktop) */}
         <button
@@ -61,7 +61,7 @@ function ChatHeader({ onStartCall }) {
             e.stopPropagation();
             setSelectedChat(null);
           }}
-          className="md:hidden p-2 -ml-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer rounded-full active:scale-95"
+          className="md:hidden p-2 -ml-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer rounded-full active:scale-95 shrink-0"
           title="Back to Chats"
         >
           <svg className="w-6 h-6 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -86,7 +86,8 @@ function ChatHeader({ onStartCall }) {
           )}
         </div>
 
-        <div className="flex flex-col justify-center min-w-0">
+        {/* 🔴 FIXED: added flex-1 and min-w-0 to prevent layout expansion on mobile viewports */}
+        <div className="flex flex-col justify-center min-w-0 flex-1">
           <h2 className="font-bold text-base md:text-lg text-slate-900 dark:text-slate-100 leading-tight truncate">
             {otherUser?.name || "User"}
           </h2>
@@ -117,7 +118,8 @@ function ChatHeader({ onStartCall }) {
       </div>
 
       {/* Right side: Action Buttons */}
-      <div className="flex items-center gap-1 md:gap-2">
+      {/* 🔴 FIXED: Added shrink-0 to prevent buttons from disappearing on mobile */}
+      <div className="flex items-center gap-1 md:gap-2 shrink-0">
         
         {/* --- VOICE CALL BUTTON --- */}
         <button
@@ -143,7 +145,7 @@ function ChatHeader({ onStartCall }) {
           title="Delete Chat"
         >
           <svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
         </button>
 
@@ -157,7 +159,7 @@ function ChatHeader({ onStartCall }) {
           title="Close Chat"
         >
           <svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
