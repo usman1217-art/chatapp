@@ -158,13 +158,15 @@ const socketHandler = (io) => {
       }
     });
 
-    socket.on("hangup", ({ to }) => {
-      const targetSockets = onlineUsers.get(to?.toString());
-      if (targetSockets) {
-        targetSockets.forEach((socketId) => {
-          io.to(socketId).emit("hangup");
-        });
-      }
+   // ✅ FIXED: Clear target definition prevents infinite echo loops
+   socket.on("hangup", ({ to }) => {
+    const targetSockets = onlineUsers.get(to?.toString());
+    if (targetSockets) {
+      targetSockets.forEach((socketId) => {
+        io.to(socketId).emit("hangup");
+      });
+    }
+  });
       
       const currentUserId = socketUsers.get(socket.id);
       const myOtherSockets = onlineUsers.get(currentUserId);
