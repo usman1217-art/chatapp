@@ -4,6 +4,8 @@ import { useAuth } from "../../context/AuthContext";
 import { getMessages } from "../../services/chatApi";
 import MessageBubble from "./MessageBubble";
 import TicTacToe from "./TicTacToe"; 
+import RockPaperScissors from "./RockPaperScissors"; // 👈 NEW IMPORT
+import ConnectFour from "./ConnectFour";           // 👈 NEW IMPORT
 
 function MessageList({ socket, setMessages }) {
   const { messages, selectedChat } = useChat();
@@ -12,10 +14,8 @@ function MessageList({ socket, setMessages }) {
   const bottomRef = useRef(null);
   const isInitialLoad = useRef(true);
 
-  // State to track the live multiplayer game session
   const [activeGame, setActiveGame] = useState(null);
 
-  // 1. Fetch initial chat history
   useEffect(() => {
     if (!selectedChat?._id) return;
     
@@ -33,10 +33,9 @@ function MessageList({ socket, setMessages }) {
     };
 
     fetchChatHistory();
-    setActiveGame(null); // Clear game state when switching chats
+    setActiveGame(null); 
   }, [selectedChat?._id, setMessages]);
 
-  // 2. Auto-scroll behavior
   useEffect(() => {
     if (loading || !messages.length) return;
 
@@ -48,7 +47,6 @@ function MessageList({ socket, setMessages }) {
     }
   }, [messages, loading]);
 
-  // 3. Auto-mark messages as read
   useEffect(() => {
     if (!socket || !selectedChat || !messages.length || !user?._id) return;
 
@@ -72,7 +70,6 @@ function MessageList({ socket, setMessages }) {
     }
   }, [messages, socket, selectedChat, user?._id, setMessages]);
 
-  // 4. Real-time socket listeners
   useEffect(() => {
     if (!socket) return;
     
@@ -98,17 +95,15 @@ function MessageList({ socket, setMessages }) {
       }
     };
 
-    // --- LIVE GAME UPDATES LISTENER ---
     const handleGameUpdated = (updatedGame) => {
       if (selectedChat?._id === updatedGame.gameId) {
         setActiveGame(updatedGame);
       }
     };
 
-    // ✅ NEW: Listen for remote cancellations
     const handleGameCancelled = ({ gameId }) => {
       if (selectedChat?._id === gameId) {
-        setActiveGame(null); // Instantly closes the board if the opponent quits
+        setActiveGame(null); 
       }
     };
 
@@ -118,9 +113,8 @@ function MessageList({ socket, setMessages }) {
     socket.on("getMessage", handleReceiveMessage);
     socket.on("messagesRead", handleMessagesRead);
     
-    // Bind game listeners
     socket.on("game-updated", handleGameUpdated); 
-    socket.on("game-cancelled", handleGameCancelled); // 👈 Bind it
+    socket.on("game-cancelled", handleGameCancelled); 
 
     return () => {
       socket.off("messageDeleted", handleMessageDeleted);
@@ -129,9 +123,8 @@ function MessageList({ socket, setMessages }) {
       socket.off("getMessage", handleReceiveMessage);
       socket.off("messagesRead", handleMessagesRead);
       
-      // Unbind game listeners
       socket.off("game-updated", handleGameUpdated);
-      socket.off("game-cancelled", handleGameCancelled); // 👈 Clean it up
+      socket.off("game-cancelled", handleGameCancelled); 
     };
   }, [socket, setMessages, selectedChat, user?._id]);
 
@@ -152,10 +145,12 @@ function MessageList({ socket, setMessages }) {
   return (
     <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-2 bg-slate-50/40 dark:bg-[#0a192f]/40 backdrop-blur-sm transition-colors duration-300 scrollbar-thin scrollbar-thumb-slate-300/80 dark:scrollbar-thumb-slate-700/80">
       
-      {/* --- ✅ FIXED: Remains open during won/draw states so players can interact with post-game buttons --- */}
+      {/* --- ✅ NEW: DYNAMIC GAME ROUTER OVERLAY --- */}
       {activeGame && (
         <div className="w-full flex justify-center py-4 sticky top-0 z-30 animate-scale-up">
-          <TicTacToe activeGame={activeGame} setActiveGame={setActiveGame} socket={socket} />
+          {activeGame.gameType === "tictactoe" && <TicTacToe activeGame={activeGame} setActiveGame={setActiveGame} socket={socket} />}
+          {activeGame.gameType === "rps" && <RockPaperScissors activeGame={activeGame} setActiveGame={setActiveGame} socket={socket} />}
+          {activeGame.gameType === "connect4" && <ConnectFour activeGame={activeGame} setActiveGame={setActiveGame} socket={socket} />}
         </div>
       )}
 

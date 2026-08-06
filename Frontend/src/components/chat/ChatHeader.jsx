@@ -1,3 +1,4 @@
+import { useState } from "react"; // 👈 ADDED: useState for the dropdown menu
 import { useChat } from "../../context/ChatContext";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
@@ -5,9 +6,10 @@ import { useSocket } from "../../context/SocketContext";
 function ChatHeader({ onStartCall }) {
   const { selectedChat, setSelectedChat, setChats } = useChat();
   const { user } = useAuth();
-  
-  // --- ADDED: Extracted `socket` to emit the game challenge ---
   const { onlineUsers, isTyping, socket } = useSocket();
+  
+  // 👈 ADDED: State to control the game selection dropdown
+  const [showGameMenu, setShowGameMenu] = useState(false);
 
   if (!selectedChat) return null;
 
@@ -51,8 +53,21 @@ function ChatHeader({ onStartCall }) {
     }
   };
 
+  // 👈 ADDED: Function to handle game selection and routing
+  const startChallenge = (gameType) => {
+    if (socket) {
+      socket.emit("initiate-game", {
+        chatId: selectedChat._id || selectedChat.id,
+        player1Id: user._id || user,
+        player2Id: otherUser._id || otherUser,
+        gameType // Sends the specific game chosen to the backend
+      });
+    }
+    setShowGameMenu(false); // Close menu after selecting
+  };
+
   return (
-    <div className="border-b border-slate-200 dark:border-slate-800 bg-white/85 dark:bg-[#0a192f]/85 backdrop-blur-xl p-3 md:p-4 flex items-center justify-between transition-colors duration-300 z-10 shadow-sm shrink-0 w-full gap-2">
+    <div className="border-b border-slate-200 dark:border-slate-800 bg-white/85 dark:bg-[#0a192f]/85 backdrop-blur-xl p-3 md:p-4 flex items-center justify-between transition-colors duration-300 z-10 shadow-sm shrink-0 w-full gap-2 relative">
       
       {/* Left side: Back Arrow, Avatar, and Status */}
       <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
@@ -121,27 +136,53 @@ function ChatHeader({ onStartCall }) {
       {/* Right side: Action Buttons */}
       <div className="flex items-center gap-1 md:gap-2 shrink-0">
         
-        {/* --- NEW: GAME CHALLENGE BUTTON --- */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (socket) {
-              socket.emit("initiate-game", {
-                chatId: selectedChat._id || selectedChat.id,
-                player1Id: user._id || user,
-                player2Id: otherUser._id || otherUser,
-              });
-            }
-          }}
-          className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-full transition-all duration-200 cursor-pointer active:scale-95"
-          title="Play Tic-Tac-Toe"
-        >
-          {/* Minimalist Gamepad SVG */}
-          <svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-            <rect x="2" y="6" width="20" height="12" rx="3" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M6 12h4m-2-2v4m10-2h.01M16 10h.01" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+        {/* --- ✅ UPDATED: GAME CHALLENGE DROPDOWN BUTTON --- */}
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowGameMenu(!showGameMenu);
+            }}
+            className={`p-2.5 rounded-full transition-all duration-200 cursor-pointer active:scale-95 ${
+              showGameMenu 
+                ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400" 
+                : "text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10"
+            }`}
+            title="Play a Game"
+          >
+            <svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <rect x="2" y="6" width="20" height="12" rx="3" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M6 12h4m-2-2v4m10-2h.01M16 10h.01" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {/* Dropdown Menu Panel */}
+          {showGameMenu && (
+            <div className="absolute top-full right-0 mt-2 w-48 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 rounded-xl shadow-2xl z-50 p-1.5 animate-[fade-in_0.2s_ease-out]">
+              <div className="text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase px-3 py-2">
+                Challenge to...
+              </div>
+              <button 
+                onClick={() => startChallenge("tictactoe")} 
+                className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-indigo-500 hover:text-white dark:hover:bg-indigo-500 rounded-lg transition-colors cursor-pointer flex items-center gap-2"
+              >
+                <span>❌</span> Tic-Tac-Toe
+              </button>
+              <button 
+                onClick={() => startChallenge("connect4")} 
+                className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-500 rounded-lg transition-colors cursor-pointer flex items-center gap-2 mt-0.5"
+              >
+                <span>🔴</span> Connect Four
+              </button>
+              <button 
+                onClick={() => startChallenge("rps")} 
+                className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 rounded-lg transition-colors cursor-pointer flex items-center gap-2 mt-0.5"
+              >
+                <span>✊</span> Rock Paper Scissors
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* --- VOICE CALL BUTTON --- */}
         <button
