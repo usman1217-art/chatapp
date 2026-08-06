@@ -9,8 +9,6 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
   const [isCallAccepted, setIsCallAccepted] = useState(isCaller);
   const [callStatus, setCallStatus] = useState(isCaller ? "Calling..." : "Incoming Voice Call");
   const [isMuted, setIsMuted] = useState(false);
-  
-  // --- NEW: Track image loading errors for graceful fallback ---
   const [imgError, setImgError] = useState(false);
 
   const localStreamRef = useRef(null);
@@ -20,7 +18,7 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
   const receiverId = receiver?._id || receiver;
   const receiverName = typeof receiver === "object" ? receiver?.name : "User";
   
-  // --- FIXED: Aggressively check common database image fields ---
+  // Safely extract the avatar whether it's coming from a friend object or an incoming socket payload
   const receiverAvatar = typeof receiver === "object" 
     ? (receiver?.avatar || receiver?.profilePic || receiver?.picture || receiver?.image) 
     : null;
@@ -69,11 +67,13 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
 
+          // ✅ FIXED: Now sending the caller's avatar across the socket so the receiver can display it
           socket.emit("call-user", {
             userToCall: receiverId,
             signalData: offer,
             from: user._id,
             name: user.name,
+            avatar: user.avatar || user.profilePic || null 
           });
         } else {
           await pc.setRemoteDescription(new RTCSessionDescription(incomingSignal));
@@ -128,13 +128,8 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
     };
   }, []);
 
-  const handleAcceptCall = () => {
-    setIsCallAccepted(true);
-  };
-
-  const handleDeclineCall = () => {
-    cleanupAndClose();
-  };
+  const handleAcceptCall = () => setIsCallAccepted(true);
+  const handleDeclineCall = () => cleanupAndClose();
 
   const cleanupAndClose = () => {
     if (localStreamRef.current) {
@@ -159,7 +154,7 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
     }
   };
 
-  // --- FIXED: Reliable fallback logic ---
+  // ✅ Fallback logic: Uses real image if available, defaults to initials if missing or broken
   const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverName)}&background=4f46e5&color=fff`;
   const displayAvatar = (!imgError && receiverAvatar) ? receiverAvatar : fallbackAvatar;
 
@@ -174,7 +169,7 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
           <img
             src={displayAvatar}
             alt={receiverName}
-            onError={() => setImgError(true)} // 👈 Fallback triggers if the real image URL is broken
+            onError={() => setImgError(true)}
             className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-slate-800 shadow-xl relative z-10 bg-slate-200"
           />
         </div>

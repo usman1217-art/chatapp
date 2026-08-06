@@ -56,13 +56,16 @@ function App() {
     });
 
     // 2. Listen for background voice calls
-    socket.on("incoming-call", ({ signal, from, name }) => {
-      setIncomingCall({
-        isCaller: false,
+    socket.on("incoming-call", ({ signal, from, name, avatar }) => { // 👈 Make sure avatar is destructured here
+      setIncomingCallData({
         signal,
-        caller: { _id: from, name }
+        caller: {
+          _id: from,
+          name: name,
+          avatar: avatar // 👈 Make sure it gets passed into the modal's receiver prop!
+        }
       });
-
+    });
       // Trigger a lingering push alert if tabbed out
       if (document.hidden && Notification.permission === "granted") {
         const callNotification = new Notification(`📞 Incoming Call`, {
