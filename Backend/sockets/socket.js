@@ -1,6 +1,6 @@
 const onlineUsers = new Map();
 const socketUsers = new Map();
-const activeGames = new Map(); // <-- NEW: Memory store for game states
+const activeGames = new Map(); // Memory store for game states
 
 // Pure utility helper evaluating matrix indices for Tic-Tac-Toe winning combinations
 function checkWin(board) {
@@ -137,7 +137,7 @@ const socketHandler = (io) => {
       }
     });
 
-    // --- NEW: MULTIPLAYER GAME EVENTS ---
+    // --- MULTIPLAYER GAME EVENTS ---
     
     // 1. Initialize Game
     socket.on("initiate-game", ({ chatId, player1Id, player2Id }) => {
@@ -172,15 +172,12 @@ const socketHandler = (io) => {
       const game = activeGames.get(gameId?.toString());
       const playerStrId = playerId?.toString();
 
-      // Validation guards
       if (!game || game.status !== "active" || game.turn !== playerStrId) return;
       if (game.board[cellIndex] !== null) return;
 
-      // Assign marker and update board
       const marker = game.players[0] === playerStrId ? "X" : "O";
       game.board[cellIndex] = marker;
 
-      // Check win/draw state
       if (checkWin(game.board)) {
         game.status = "won";
         game.winner = playerStrId;
@@ -192,7 +189,6 @@ const socketHandler = (io) => {
 
       activeGames.set(game.gameId, game);
 
-      // Route updated state to both players
       game.players.forEach(userId => {
         const userSockets = onlineUsers.get(userId);
         if (userSockets) {
@@ -215,7 +211,6 @@ const socketHandler = (io) => {
 
       activeGames.set(game.gameId, game);
 
-      // Route reset state to both players
       game.players.forEach(userId => {
         const userSockets = onlineUsers.get(userId);
         if (userSockets) {
@@ -225,7 +220,25 @@ const socketHandler = (io) => {
         }
       });
     });
-    // ---------------------------------------------
+
+    // 4. Cancel & Destroy Game (Cleanly structured inside connection loop)
+    socket.on("cancel-game", ({ gameId }) => {
+      const stringGameId = gameId?.toString();
+      const game = activeGames.get(stringGameId);
+      
+      if (!game) return;
+
+      game.players.forEach(userId => {
+        const userSockets = onlineUsers.get(userId);
+        if (userSockets) {
+          userSockets.forEach(socketId => {
+            io.to(socketId).emit("game-cancelled", { gameId: stringGameId });
+          });
+        }
+      });
+
+      activeGames.delete(stringGameId);
+    });
 
     // Disconnect
     socket.on("disconnect", () => {

@@ -23,82 +23,91 @@ function TicTacToe({ activeGame, setActiveGame, socket }) {
     });
   };
 
-  // ✅ NEW: Handles clearing the game fully from both UI and backend state
+  // ✅ FIXED: Now properly emits "cancel-game" to destroy the session on both screens instantly
   const handleCancelGame = () => {
     setActiveGame(null);
-    // Optional: Notify backend to clean up RAM mapping if needed
-    socket.emit("reset-game", { gameId }); 
+    socket.emit("cancel-game", { gameId }); 
   };
 
   return (
-    <div className="bg-white/90 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-2xl max-w-[280px] w-full text-center animate-scale-up">
-      <div className="flex justify-between items-center mb-4">
-        <h4 className="text-xs font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
-          🎮 Tic-Tac-Toe
+    <div className="bg-white/90 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-2xl max-w-[280px] w-full text-center transition-all duration-500 ease-out transform scale-100 animate-[fade-in_0.3s_ease-out]">
+      
+      {/* Header */}
+      <div className="flex justify-between items-center mb-5">
+        <h4 className="text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+          <span className="animate-pulse">🎮</span> Tic-Tac-Toe
         </h4>
         <button 
           onClick={handleCancelGame} 
-          className="text-xs font-bold text-slate-400 hover:text-red-500 transition cursor-pointer"
-          title="Close match space"
+          className="text-[11px] font-bold text-slate-500 hover:text-white bg-slate-100 hover:bg-red-500 dark:bg-slate-800 dark:hover:bg-red-500 px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer active:scale-90 shadow-sm"
+          title="End match instantly"
         >
-          Cancel
+          Quit
         </button>
       </div>
 
-      {/* Dynamic Status Banner — Explicitly tracking results */}
-      <div className={`text-xs font-bold mb-4 px-3 py-2 rounded-xl border transition-all ${
+      {/* Dynamic Status Banner */}
+      <div className={`text-xs font-bold mb-5 px-3 py-2.5 rounded-xl border transition-all duration-500 ${
         activeGame.status === "won" 
           ? activeGame.winner === currentUserId 
-            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 animate-pulse" 
-            : "bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400"
+            ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-600 dark:text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse" 
+            : "bg-red-500/15 border-red-500/50 text-red-600 dark:text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)]"
           : activeGame.status === "draw"
-          ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
+          ? "bg-amber-500/15 border-amber-500/50 text-amber-600 dark:text-amber-400"
           : "bg-slate-100/80 dark:bg-slate-800/60 border-slate-200/60 dark:border-slate-700/40 text-slate-700 dark:text-slate-300"
       }`}>
         {activeGame.status === "active" && (
-          myTurn ? "🟢 Your Turn!" : `⏳ Waiting for ${opponent?.name || "Player"}...`
+          myTurn 
+            ? <span className="flex items-center justify-center gap-1.5">🟢 Your Turn!</span> 
+            : <span className="flex items-center justify-center gap-1.5 opacity-70">⏳ Waiting for {opponent?.name?.split(' ')[0] || "Player"}...</span>
         )}
         {activeGame.status === "won" && (
-          activeGame.winner === currentUserId ? "🏆 Victory! You Won!" : "❌ Defeat! Opponent Won!"
+          activeGame.winner === currentUserId 
+            ? <span className="text-sm">🏆 Victory!</span> 
+            : <span className="text-sm">❌ Defeat!</span>
         )}
-        {activeGame.status === "draw" && "🤝 Match Drawn! Good game!"}
+        {activeGame.status === "draw" && "🤝 Match Drawn!"}
       </div>
 
       {/* 3x3 Grid Matrix */}
-      <div className="grid grid-cols-3 gap-2 mx-auto max-w-[180px] mb-4">
+      <div className="grid grid-cols-3 gap-2 mx-auto max-w-[190px] mb-4">
         {activeGame.board.map((cell, index) => (
           <button
             key={index}
             onClick={() => handleCellClick(index)}
             disabled={!myTurn || cell !== null || activeGame.status !== "active"}
-            className={`w-14 h-14 rounded-xl text-xl font-black flex items-center justify-center transition-all duration-150 border select-none
-              ${cell === "X" ? "text-indigo-600 bg-indigo-500/10 border-indigo-500/20 dark:text-indigo-400" : ""}
-              ${cell === "O" ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20 dark:text-emerald-400" : ""}
-              ${!cell && myTurn && activeGame.status === "active" ? "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 hover:bg-indigo-500/5 hover:border-indigo-500/40 cursor-pointer active:scale-95" : "border-slate-200/40 dark:border-slate-800/40 cursor-default"}
+            className={`w-[60px] h-[60px] rounded-2xl text-2xl font-black flex items-center justify-center transition-all duration-200 border select-none overflow-hidden
+              ${cell === "X" ? "text-indigo-600 bg-indigo-500/10 border-indigo-500/30 dark:text-indigo-400 drop-shadow-md" : ""}
+              ${cell === "O" ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/30 dark:text-emerald-400 drop-shadow-md" : ""}
+              ${!cell && myTurn && activeGame.status === "active" ? "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 hover:bg-indigo-500/10 hover:border-indigo-500/50 cursor-pointer active:scale-75 hover:scale-105" : "border-slate-200/40 dark:border-slate-800/40 cursor-default"}
             `}
           >
-            {cell}
+            {/* Pop-in animation for X and O */}
+            <span className={`transition-transform duration-300 ${cell ? 'scale-100 opacity-100 animate-[bounce_0.3s_ease-out_1]' : 'scale-0 opacity-0'}`}>
+              {cell}
+            </span>
           </button>
         ))}
       </div>
 
-      {/* ✅ Action Control Interface Panel */}
-      {activeGame.status !== "active" && (
-        <div className="flex flex-col gap-2 mt-2">
+      {/* Action Control Interface Panel (Smooth fade in when game ends) */}
+      <div className={`transition-all duration-500 overflow-hidden ${activeGame.status !== "active" ? "max-h-[120px] opacity-100 mt-2" : "max-h-0 opacity-0"}`}>
+        <div className="flex flex-col gap-2.5 pt-2">
           <button
             onClick={() => socket.emit("reset-game", { gameId })}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl transition shadow-md active:scale-98 cursor-pointer"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-3 rounded-xl transition-all duration-200 shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.23)] active:scale-95 hover:-translate-y-0.5 cursor-pointer"
           >
             🔄 Play Again
           </button>
           <button
             onClick={handleCancelGame}
-            className="w-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs py-2.5 rounded-xl transition active:scale-98 cursor-pointer"
+            className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs py-3 rounded-xl transition-all duration-200 active:scale-95 hover:-translate-y-0.5 cursor-pointer"
           >
             Exit Board
           </button>
         </div>
-      )}
+      </div>
+
     </div>
   );
 }

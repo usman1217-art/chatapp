@@ -105,12 +105,22 @@ function MessageList({ socket, setMessages }) {
       }
     };
 
+    // ✅ NEW: Listen for remote cancellations
+    const handleGameCancelled = ({ gameId }) => {
+      if (selectedChat?._id === gameId) {
+        setActiveGame(null); // Instantly closes the board if the opponent quits
+      }
+    };
+
     socket.on("messageDeleted", handleMessageDeleted);
     socket.on("receiveMessage", handleReceiveMessage);
     socket.on("newMessage", handleReceiveMessage);
     socket.on("getMessage", handleReceiveMessage);
     socket.on("messagesRead", handleMessagesRead);
+    
+    // Bind game listeners
     socket.on("game-updated", handleGameUpdated); 
+    socket.on("game-cancelled", handleGameCancelled); // 👈 Bind it
 
     return () => {
       socket.off("messageDeleted", handleMessageDeleted);
@@ -118,7 +128,10 @@ function MessageList({ socket, setMessages }) {
       socket.off("newMessage", handleReceiveMessage);
       socket.off("getMessage", handleReceiveMessage);
       socket.off("messagesRead", handleMessagesRead);
+      
+      // Unbind game listeners
       socket.off("game-updated", handleGameUpdated);
+      socket.off("game-cancelled", handleGameCancelled); // 👈 Clean it up
     };
   }, [socket, setMessages, selectedChat, user?._id]);
 
