@@ -26,14 +26,12 @@ function checkConnect4Win(board, lastMoveIndex) {
 
   for (let [dr, dc] of directions) {
     let count = 1;
-    // Check positive coordinate delta sequence
     for (let i = 1; i < 4; i++) {
       let nr = r + dr * i;
       let nc = c + dc * i;
       if (nr >= 0 && nr < 6 && nc >= 0 && nc < 7 && board[nr * 7 + nc] === token) count++;
       else break;
     }
-    // Check negative coordinate delta sequence
     for (let i = 1; i < 4; i++) {
       let nr = r - dr * i;
       let nc = c - dc * i;
@@ -133,11 +131,11 @@ const socketHandler = (io) => {
     });
 
     // WebRTC Voice Routing Events
-    socket.on("call-user", ({ userToCall, signalData, from, name }) => {
+    socket.on("call-user", ({ userToCall, signalData, from, name, avatar }) => {
       const targetSockets = onlineUsers.get(userToCall?.toString());
       if (targetSockets) {
         targetSockets.forEach((socketId) => {
-          io.to(socketId).emit("incoming-call", { signal: signalData, from, name });
+          io.to(socketId).emit("incoming-call", { signal: signalData, from, name, avatar });
         });
       }
     });
@@ -167,6 +165,16 @@ const socketHandler = (io) => {
           io.to(socketId).emit("hangup");
         });
       }
+      
+      const currentUserId = socketUsers.get(socket.id);
+      const myOtherSockets = onlineUsers.get(currentUserId);
+      if (myOtherSockets) {
+        myOtherSockets.forEach((socketId) => {
+          if (socketId !== socket.id) {
+            io.to(socketId).emit("hangup");
+          }
+        });
+      }
     });
 
     // --- MULTIPLAYER ENGINE CORE PIPELINE (GAME-AGNOSTIC BUILD) ---
@@ -178,12 +186,24 @@ const socketHandler = (io) => {
       const p2 = player2Id?.toString();
 
       let defaultBoardState;
+      let extraState = {};
+
       if (gameType === "connect4") {
-        defaultBoardState = Array(42).fill(null); // 6x7 standard Connect Four array
+        defaultBoardState = Array(42).fill(null); 
       } else if (gameType === "rps") {
-        defaultBoardState = { [p1]: null, [p2]: null }; // Action choice mapping
+        defaultBoardState = { [p1]: null, [p2]: null }; 
+      } else if (gameType === "memory") {
+        const symbols = ["🍎", "🍌", "🍇", "🍊", "🍒", "🥝", "🍉", "🍍", "🍎", "🍌", "🍇", "🍊", "🍒", "🥝", "🍉", "🍍"];
+        defaultBoardState = symbols.sort(() => Math.random() - 0.5).map((s, idx) => ({ id: idx, symbol: s, isFlipped: false, isMatched: false }));
+        extraState.selectedCards = [];
+      } else if (gameType === "dots") {
+        defaultBoardState = {
+          hLines: Array(12).fill(null),
+          vLines: Array(12).fill(null),
+          boxes: Array(4).fill(null)
+        };
       } else {
-        defaultBoardState = Array(9).fill(null); // Default 3x3 Tic-Tac-Toe
+        defaultBoardState = Array(9).fill(null);
       }
 
       const newGame = {
@@ -193,7 +213,8 @@ const socketHandler = (io) => {
         board: defaultBoardState,
         turn: p1,
         status: "active",
-        winner: null
+        winner: null,
+        ...extraState
       };
 
       activeGames.set(gameId, newGame);
@@ -209,7 +230,7 @@ const socketHandler = (io) => {
     });
 
     // 2. Compute Moves for Dynamic Game Models
-    socket.on("make-move", ({ gameId, playerId, cellIndex, choice, columnIndex }) => {
+    socket.on("make-move", ({ gameId, playerId, cellIndex, choice, columnIndex, lineType, lineIdx }) => {
       const stringGameId = gameId?.toString();
       const game = activeGames.get(stringGameId);
       const playerStrId = playerId?.toString();
@@ -219,12 +240,10 @@ const socketHandler = (io) => {
       const p1 = game.players[0];
       const p2 = game.players[1];
 
-      // --- SUB-ENGINE A: TIC-TAC-TOE MATRIX RUNTIME ---
+      // --- SUB-ENGINE A: TIC-TAC-TOE ---
       if (game.gameType === "tictactoe") {
         if (game.turn !== playerStrId || game.board[cellIndex] !== null) return;
-
         game.board[cellIndex] = p1 === playerStrId ? "X" : "O";
-
         if (checkTicTacToeWin(game.board)) {
           game.status = "won";
           game.winner = playerStrId;
@@ -235,15 +254,12 @@ const socketHandler = (io) => {
         }
       }
 
-      // --- SUB-ENGINE B: ROCK PAPER SCISSORS DOUBLE-BLIND RUNTIME ---
+      // --- SUB-ENGINE B: ROCK PAPER SCISSORS ---
       else if (game.gameType === "rps") {
-        game.board[playerStrId] = choice; // Stash player move selection choice
-
-        // Evaluate choices only after both inputs land
+        game.board[playerStrId] = choice;
         if (game.board[p1] && game.board[p2]) {
           const m1 = game.board[p1];
           const m2 = game.board[p2];
-
           if (m1 === m2) {
             game.status = "draw";
           } else if (
@@ -258,18 +274,16 @@ const socketHandler = (io) => {
             game.winner = p2;
           }
         } else {
-          // Pass dynamic turn sequence toggle to prompt wait screen flags
           game.turn = game.players.find(id => id !== playerStrId);
         }
       }
 
-      // --- SUB-ENGINE C: CONNECT FOUR GRAVITY GRID RUNTIME ---
+      // --- SUB-ENGINE C: CONNECT FOUR ---
       else if (game.gameType === "connect4") {
         if (game.turn !== playerStrId) return;
         const col = parseInt(columnIndex, 10);
         if (isNaN(col) || col < 0 || col > 6) return;
 
-        // Gravity check execution: step through column indices downward from row 5
         let targetDropIdx = -1;
         for (let row = 5; row >= 0; row--) {
           const currentCellCheck = row * 7 + col;
@@ -278,8 +292,7 @@ const socketHandler = (io) => {
             break;
           }
         }
-
-        if (targetDropIdx === -1) return; // Column full execution guard exit
+        if (targetDropIdx === -1) return;
 
         game.board[targetDropIdx] = p1 === playerStrId ? "R" : "Y";
 
@@ -289,6 +302,79 @@ const socketHandler = (io) => {
         } else if (game.board.every(cell => cell !== null)) {
           game.status = "draw";
         } else {
+          game.turn = game.players.find(id => id !== playerStrId);
+        }
+      }
+
+      // --- SUB-ENGINE D: MEMORY MATCH ---
+      else if (game.gameType === "memory") {
+        if (game.turn !== playerStrId) return;
+        
+        // Handle delayed reset signal from frontend
+        if (cellIndex === -1) {
+          if (game.selectedCards.length === 2) {
+            const [idx1, idx2] = game.selectedCards;
+            game.board[idx1].isFlipped = false;
+            game.board[idx2].isFlipped = false;
+            game.selectedCards = [];
+            game.turn = game.players.find(id => id !== playerStrId);
+          }
+        } else {
+          const cardIdx = cellIndex;
+          if (game.board[cardIdx].isFlipped || game.board[cardIdx].isMatched || game.selectedCards.length >= 2) return;
+
+          game.board[cardIdx].isFlipped = true;
+          game.selectedCards.push(cardIdx);
+
+          if (game.selectedCards.length === 2) {
+            const [idx1, idx2] = game.selectedCards;
+            if (game.board[idx1].symbol === game.board[idx2].symbol) {
+              game.board[idx1].isMatched = true;
+              game.board[idx2].isMatched = true;
+              game.selectedCards = [];
+              if (game.board.every(card => card.isMatched)) {
+                game.status = "won";
+                game.winner = playerStrId;
+              }
+            }
+          }
+        }
+      }
+
+      // --- SUB-ENGINE E: DOTS AND BOXES ---
+      else if (game.gameType === "dots") {
+        if (game.turn !== playerStrId) return;
+        
+        if (lineType === 'h' && game.board.hLines[lineIdx] !== null) return;
+        if (lineType === 'v' && game.board.vLines[lineIdx] !== null) return;
+
+        if (lineType === 'h') game.board.hLines[lineIdx] = playerStrId;
+        else game.board.vLines[lineIdx] = playerStrId;
+
+        let boxCompleted = false;
+        const boxCheckDefinitions = [
+          { id: 0, top: 0, bottom: 2, left: 0, right: 1 },
+          { id: 1, top: 1, bottom: 3, left: 1, right: 2 },
+          { id: 2, top: 2, bottom: 4, left: 3, right: 4 },
+          { id: 3, top: 3, bottom: 5, left: 4, right: 5 }
+        ];
+
+        boxCheckDefinitions.forEach(b => {
+          if (game.board.boxes[b.id] === null) {
+            if (game.board.hLines[b.top] && game.board.hLines[b.bottom] && game.board.vLines[b.left] && game.board.vLines[b.right]) {
+              game.board.boxes[b.id] = playerStrId;
+              boxCompleted = true;
+            }
+          }
+        });
+
+        if (game.board.boxes.every(b => b !== null)) {
+          game.status = "won";
+          const p1Count = game.board.boxes.filter(b => b === p1).length;
+          const p2Count = game.board.boxes.filter(b => b === p2).length;
+          if (p1Count === p2Count) game.status = "draw";
+          else game.winner = p1Count > p2Count ? p1 : p2;
+        } else if (!boxCompleted) {
           game.turn = game.players.find(id => id !== playerStrId);
         }
       }
@@ -318,6 +404,12 @@ const socketHandler = (io) => {
         game.board = Array(42).fill(null);
       } else if (game.gameType === "rps") {
         game.board = { [p1]: null, [p2]: null };
+      } else if (game.gameType === "memory") {
+        const symbols = ["🍎", "🍌", "🍇", "🍊", "🍒", "🥝", "🍉", "🍍", "🍎", "🍌", "🍇", "🍊", "🍒", "🥝", "🍉", "🍍"];
+        game.board = symbols.sort(() => Math.random() - 0.5).map((s, idx) => ({ id: idx, symbol: s, isFlipped: false, isMatched: false }));
+        game.selectedCards = [];
+      } else if (game.gameType === "dots") {
+        game.board = { hLines: Array(12).fill(null), vLines: Array(12).fill(null), boxes: Array(4).fill(null) };
       } else {
         game.board = Array(9).fill(null);
       }

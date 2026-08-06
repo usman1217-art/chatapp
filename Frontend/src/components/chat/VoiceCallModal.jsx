@@ -18,7 +18,6 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
   const receiverId = receiver?._id || receiver;
   const receiverName = typeof receiver === "object" ? receiver?.name : "User";
   
-  // Safely extract the avatar whether it's coming from a friend object or an incoming socket payload
   const receiverAvatar = typeof receiver === "object" 
     ? (receiver?.avatar || receiver?.profilePic || receiver?.picture || receiver?.image) 
     : null;
@@ -67,7 +66,6 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
 
-          // ✅ FIXED: Now sending the caller's avatar across the socket so the receiver can display it
           socket.emit("call-user", {
             userToCall: receiverId,
             signalData: offer,
@@ -107,7 +105,7 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
       } catch (err) {
         console.error("Failed to initialize WebRTC audio stream:", err);
         setCallStatus("Mic permission denied or error");
-        setTimeout(cleanupAndClose, 2500);
+        setTimeout(() => cleanupAndClose(false), 2500);
       }
     };
 
@@ -116,31 +114,38 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
     return () => {};
   }, [isCallAccepted]);
 
+  // ✅ FIXED: Separated Remote Hangups from Local Hangups
   useEffect(() => {
-    socket.on("hangup", () => {
-      cleanupAndClose();
-    });
+    // When the socket tells us the other person hung up, flag isRemote as true
+    const handleRemoteHangup = () => cleanupAndClose(true);
+
+    socket.on("hangup", handleRemoteHangup);
 
     return () => {
-      socket.off("call-accepted");
-      socket.off("ice-candidate");
-      socket.off("hangup");
+      socket.off("hangup", handleRemoteHangup);
     };
   }, []);
 
   const handleAcceptCall = () => setIsCallAccepted(true);
-  const handleDeclineCall = () => cleanupAndClose();
+  
+  // When the local user clicks decline, flag isRemote as false
+  const handleDeclineCall = () => cleanupAndClose(false); 
 
-  const cleanupAndClose = () => {
+  // ✅ FIXED: Guard block added to stop the ping-pong infinite loop
+  const cleanupAndClose = (isRemote = false) => {
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => track.stop());
     }
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
     }
-    if (receiverId) {
+    
+    // Only tell the other user we hung up if WE clicked the button. 
+    // If we are just responding to THEIR hangup, do not emit!
+    if (receiverId && !isRemote) {
       socket.emit("hangup", { to: receiverId });
     }
+    
     onClose();
   };
 
@@ -154,7 +159,6 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
     }
   };
 
-  // ✅ Fallback logic: Uses real image if available, defaults to initials if missing or broken
   const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverName)}&background=4f46e5&color=fff`;
   const displayAvatar = (!imgError && receiverAvatar) ? receiverAvatar : fallbackAvatar;
 
@@ -222,8 +226,9 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
                 </button>
               )}
 
+              {/* End call button behaves the same as decline—it's a local action */}
               <button
-                onClick={cleanupAndClose}
+                onClick={() => cleanupAndClose(false)}
                 className="p-4 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg transition-all transform active:scale-95 cursor-pointer rotate-[135deg]"
                 title="End Call"
               >
