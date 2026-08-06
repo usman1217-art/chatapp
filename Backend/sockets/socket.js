@@ -158,23 +158,12 @@ const socketHandler = (io) => {
       }
     });
 
-   // ✅ FIXED: Clear target definition prevents infinite echo loops
-   socket.on("hangup", ({ to }) => {
-    const targetSockets = onlineUsers.get(to?.toString());
-    if (targetSockets) {
-      targetSockets.forEach((socketId) => {
-        io.to(socketId).emit("hangup");
-      });
-    }
-  });
-      
-      const currentUserId = socketUsers.get(socket.id);
-      const myOtherSockets = onlineUsers.get(currentUserId);
-      if (myOtherSockets) {
-        myOtherSockets.forEach((socketId) => {
-          if (socketId !== socket.id) {
-            io.to(socketId).emit("hangup");
-          }
+    // ✅ FIXED: Clean hangup loop without any floating brackets
+    socket.on("hangup", ({ to }) => {
+      const targetSockets = onlineUsers.get(to?.toString());
+      if (targetSockets) {
+        targetSockets.forEach((socketId) => {
+          io.to(socketId).emit("hangup");
         });
       }
     });
@@ -312,7 +301,6 @@ const socketHandler = (io) => {
       else if (game.gameType === "memory") {
         if (game.turn !== playerStrId) return;
         
-        // Handle delayed reset signal from frontend
         if (cellIndex === -1) {
           if (game.selectedCards.length === 2) {
             const [idx1, idx2] = game.selectedCards;
