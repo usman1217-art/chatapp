@@ -3,7 +3,7 @@ import { useChat } from "../../context/ChatContext";
 import { useAuth } from "../../context/AuthContext";
 import { getMessages } from "../../services/chatApi";
 import MessageBubble from "./MessageBubble";
-import TicTacToe from "./TicTacToe"; // 👈 1. IMPORT THE COMPONENT HERE
+import TicTacToe from "./TicTacToe"; 
 
 function MessageList({ socket, setMessages }) {
   const { messages, selectedChat } = useChat();
@@ -110,7 +110,7 @@ function MessageList({ socket, setMessages }) {
     socket.on("newMessage", handleReceiveMessage);
     socket.on("getMessage", handleReceiveMessage);
     socket.on("messagesRead", handleMessagesRead);
-    socket.on("game-updated", handleGameUpdated); // 👈 Listen for the game synchronization data
+    socket.on("game-updated", handleGameUpdated); 
 
     return () => {
       socket.off("messageDeleted", handleMessageDeleted);
@@ -139,8 +139,8 @@ function MessageList({ socket, setMessages }) {
   return (
     <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-2 bg-slate-50/40 dark:bg-[#0a192f]/40 backdrop-blur-sm transition-colors duration-300 scrollbar-thin scrollbar-thumb-slate-300/80 dark:scrollbar-thumb-slate-700/80">
       
-      {/* --- ✅ 2. MOUNTED ACTIVE GAME PANEL TRACK --- */}
-      {activeGame && activeGame.status === "active" && (
+      {/* --- ✅ FIXED: Remains open during won/draw states so players can interact with post-game buttons --- */}
+      {activeGame && (
         <div className="w-full flex justify-center py-4 sticky top-0 z-30 animate-scale-up">
           <TicTacToe activeGame={activeGame} setActiveGame={setActiveGame} socket={socket} />
         </div>
