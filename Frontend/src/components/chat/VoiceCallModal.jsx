@@ -6,10 +6,12 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
   const { socket } = useSocket();
   const { user } = useAuth();
 
-  // --- NEW: Track whether the incoming call has been accepted ---
   const [isCallAccepted, setIsCallAccepted] = useState(isCaller);
   const [callStatus, setCallStatus] = useState(isCaller ? "Calling..." : "Incoming Voice Call");
   const [isMuted, setIsMuted] = useState(false);
+  
+  // --- NEW: Track image loading errors for graceful fallback ---
+  const [imgError, setImgError] = useState(false);
 
   const localStreamRef = useRef(null);
   const remoteAudioRef = useRef(null);
@@ -17,7 +19,11 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
 
   const receiverId = receiver?._id || receiver;
   const receiverName = typeof receiver === "object" ? receiver?.name : "User";
-  const receiverAvatar = typeof receiver === "object" ? receiver?.avatar : null;
+  
+  // --- FIXED: Aggressively check common database image fields ---
+  const receiverAvatar = typeof receiver === "object" 
+    ? (receiver?.avatar || receiver?.profilePic || receiver?.picture || receiver?.image) 
+    : null;
 
   const iceServers = {
     iceServers: [
@@ -26,9 +32,7 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
     ],
   };
 
-  // Handle WebRTC Setup Flow
   useEffect(() => {
-    // Only run WebRTC negotiation if the call is outgoing, or if the incoming call was accepted
     if (!isCallAccepted) return;
 
     let pc = null;
@@ -109,12 +113,9 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
 
     startCallFlow();
 
-    return () => {
-      // Shared socket listeners cleanup handled in the main component unmount hook
-    };
+    return () => {};
   }, [isCallAccepted]);
 
-  // Handle high-level signaling status termination listeners
   useEffect(() => {
     socket.on("hangup", () => {
       cleanupAndClose();
@@ -158,7 +159,9 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
     }
   };
 
-  const displayAvatar = receiverAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverName)}&background=4f46e5&color=fff`;
+  // --- FIXED: Reliable fallback logic ---
+  const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverName)}&background=4f46e5&color=fff`;
+  const displayAvatar = (!imgError && receiverAvatar) ? receiverAvatar : fallbackAvatar;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/60 dark:bg-black/75 backdrop-blur-md p-4 animate-fade-in">
@@ -166,12 +169,12 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
 
       <div className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl w-full max-w-[320px] rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] border border-white/50 dark:border-slate-700/50 flex flex-col items-center p-8 text-center animate-scale-up">
         
-        {/* Pulsing Avatar Container */}
         <div className="relative mb-6">
           <div className="absolute -inset-2 rounded-full border-2 border-indigo-500/40 animate-ping"></div>
           <img
             src={displayAvatar}
             alt={receiverName}
+            onError={() => setImgError(true)} // 👈 Fallback triggers if the real image URL is broken
             className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-slate-800 shadow-xl relative z-10 bg-slate-200"
           />
         </div>
@@ -183,12 +186,9 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
           {callStatus}
         </p>
 
-        {/* --- CONDITIONAL ACTION CONTROLS --- */}
         <div className="flex items-center gap-5 w-full justify-center">
           {!isCallAccepted ? (
-            /* --- RINGING PANEL: SHOW ATTEND OR DECLINE BUTTONS --- */
             <>
-              {/* Decline Button */}
               <button
                 onClick={handleDeclineCall}
                 className="p-4 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all transform active:scale-95 cursor-pointer rotate-[135deg]"
@@ -199,7 +199,6 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
                 </svg>
               </button>
 
-              {/* Accept Button */}
               <button
                 onClick={handleAcceptCall}
                 className="p-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full shadow-lg transition-all transform active:scale-95 cursor-pointer animate-pulse"
@@ -211,7 +210,6 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
               </button>
             </>
           ) : (
-            /* --- LIVE CALL PANEL: SHOW MUTE AND HANGUP CONTROLS --- */
             <>
               {callStatus === "Connected" && (
                 <button
