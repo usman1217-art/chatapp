@@ -3,13 +3,17 @@ import { useChat } from "../../context/ChatContext";
 import { useAuth } from "../../context/AuthContext";
 import { getMessages } from "../../services/chatApi";
 import MessageBubble from "./MessageBubble";
+import TicTacToe from "./TicTacToe"; // 👈 1. IMPORT THE COMPONENT HERE
 
 function MessageList({ socket, setMessages }) {
   const { messages, selectedChat } = useChat();
-  const { user } = useAuth(); // Need to know who the current user is
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef(null);
   const isInitialLoad = useRef(true);
+
+  // State to track the live multiplayer game session
+  const [activeGame, setActiveGame] = useState(null);
 
   // 1. Fetch initial chat history
   useEffect(() => {
@@ -29,9 +33,10 @@ function MessageList({ socket, setMessages }) {
     };
 
     fetchChatHistory();
+    setActiveGame(null); // Clear game state when switching chats
   }, [selectedChat?._id, setMessages]);
 
-  // 2. Auto-scroll to bottom behavior
+  // 2. Auto-scroll behavior
   useEffect(() => {
     if (loading || !messages.length) return;
 
@@ -43,23 +48,20 @@ function MessageList({ socket, setMessages }) {
     }
   }, [messages, loading]);
 
-  // 3. --- NEW: AUTO-MARK MESSAGES AS READ ---
+  // 3. Auto-mark messages as read
   useEffect(() => {
     if (!socket || !selectedChat || !messages.length || !user?._id) return;
 
-    // Find any unread messages sent by the *other* person
     const unreadIncomingMessages = messages.filter(
       (m) => !m.isRead && (m.sender?._id || m.sender) !== user._id
     );
 
     if (unreadIncomingMessages.length > 0) {
-      // 1. Tell the server to mark these messages as read in the database
       socket.emit("markAsRead", { 
         chatId: selectedChat._id, 
         readerId: user._id 
       });
       
-      // 2. Optimistically update local UI so we don't refetch
       setMessages((prev) =>
         prev.map((m) =>
           !m.isRead && (m.sender?._id || m.sender) !== user._id
@@ -70,26 +72,18 @@ function MessageList({ socket, setMessages }) {
     }
   }, [messages, socket, selectedChat, user?._id, setMessages]);
 
-
-  // 4. --- REAL-TIME SOCKET LISTENERS ---
+  // 4. Real-time socket listeners
   useEffect(() => {
     if (!socket) return;
     
-    // A. Handle Deleted Messages
     const handleMessageDeleted = ({ messageId }) => {
       setMessages((prev) =>
-        prev.map((m) =>
-          m._id === messageId
-            ? { ...m, text: "This message was deleted", image: null, deletedForEveryone: true }
-            : m
-        )
+        prev.map((m) => m._id === messageId ? { ...m, text: "This message was deleted", image: null, deletedForEveryone: true } : m)
       );
     };
 
-    // B. Handle New Incoming Messages
     const handleReceiveMessage = (newMessage) => {
       const belongsToCurrentChat = selectedChat && (newMessage.chat === selectedChat._id || newMessage.chat?._id === selectedChat._id);
-      
       if (belongsToCurrentChat) {
         setMessages((prev) => {
           if (prev.some((m) => m._id === newMessage._id)) return prev;
@@ -98,33 +92,33 @@ function MessageList({ socket, setMessages }) {
       }
     };
 
-    // C. Handle Messages being marked as read by the OTHER user
     const handleMessagesRead = ({ chatId }) => {
       if (selectedChat?._id === chatId) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            (m.sender?._id || m.sender) === user?._id
-              ? { ...m, isRead: true }
-              : m
-          )
-        );
+        setMessages((prev) => prev.map((m) => (m.sender?._id || m.sender) === user?._id ? { ...m, isRead: true } : m));
       }
     };
 
-    // Bind event listeners
+    // --- LIVE GAME UPDATES LISTENER ---
+    const handleGameUpdated = (updatedGame) => {
+      if (selectedChat?._id === updatedGame.gameId) {
+        setActiveGame(updatedGame);
+      }
+    };
+
     socket.on("messageDeleted", handleMessageDeleted);
     socket.on("receiveMessage", handleReceiveMessage);
     socket.on("newMessage", handleReceiveMessage);
     socket.on("getMessage", handleReceiveMessage);
-    socket.on("messagesRead", handleMessagesRead); // Catch read receipts!
+    socket.on("messagesRead", handleMessagesRead);
+    socket.on("game-updated", handleGameUpdated); // 👈 Listen for the game synchronization data
 
-    // Cleanup listeners
     return () => {
       socket.off("messageDeleted", handleMessageDeleted);
       socket.off("receiveMessage", handleReceiveMessage);
       socket.off("newMessage", handleReceiveMessage);
       socket.off("getMessage", handleReceiveMessage);
       socket.off("messagesRead", handleMessagesRead);
+      socket.off("game-updated", handleGameUpdated);
     };
   }, [socket, setMessages, selectedChat, user?._id]);
 
@@ -144,6 +138,14 @@ function MessageList({ socket, setMessages }) {
 
   return (
     <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-2 bg-slate-50/40 dark:bg-[#0a192f]/40 backdrop-blur-sm transition-colors duration-300 scrollbar-thin scrollbar-thumb-slate-300/80 dark:scrollbar-thumb-slate-700/80">
+      
+      {/* --- ✅ 2. MOUNTED ACTIVE GAME PANEL TRACK --- */}
+      {activeGame && activeGame.status === "active" && (
+        <div className="w-full flex justify-center py-4 sticky top-0 z-30 animate-scale-up">
+          <TicTacToe activeGame={activeGame} setActiveGame={setActiveGame} socket={socket} />
+        </div>
+      )}
+
       {messages.map((msg, index) => (
         <MessageBubble key={msg._id || index} message={msg} />
       ))}

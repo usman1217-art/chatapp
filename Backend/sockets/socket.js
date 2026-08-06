@@ -1,5 +1,16 @@
 const onlineUsers = new Map();
 const socketUsers = new Map();
+const activeGames = new Map(); // <-- NEW: Memory store for game states
+
+// Pure utility helper evaluating matrix indices for Tic-Tac-Toe winning combinations
+function checkWin(board) {
+  const winConditions = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+    [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+    [0, 4, 8], [2, 4, 6]             // Diagonals
+  ];
+  return winConditions.some(([a, b, c]) => board[a] && board[a] === board[b] && board[a] === board[c]);
+}
 
 const socketHandler = (io) => {
   io.on("connection", (socket) => {
@@ -65,9 +76,8 @@ const socketHandler = (io) => {
       }
     });
 
-    // --- NEW: Read Receipts (`markAsRead` synced with MessageList.jsx) ---
+    // Read Receipts (`markAsRead` synced with MessageList.jsx)
     socket.on("markAsRead", ({ chatId, readerId }) => {
-      // Notify other online users that messages in this chat have been read
       for (const [userId, socketIds] of onlineUsers.entries()) {
         if (userId !== readerId?.toString()) {
           socketIds.forEach((socketId) => {
@@ -90,7 +100,7 @@ const socketHandler = (io) => {
       }
     });
 
-    // --- NEW: WebRTC Voice Call Signaling Events ---
+    // WebRTC Voice Call Signaling Events
     socket.on("call-user", ({ userToCall, signalData, from, name }) => {
       const targetSockets = onlineUsers.get(userToCall?.toString());
       if (targetSockets) {
@@ -125,6 +135,95 @@ const socketHandler = (io) => {
           io.to(socketId).emit("hangup");
         });
       }
+    });
+
+    // --- NEW: MULTIPLAYER GAME EVENTS ---
+    
+    // 1. Initialize Game
+    socket.on("initiate-game", ({ chatId, player1Id, player2Id }) => {
+      const gameId = chatId?.toString();
+      const p1 = player1Id?.toString();
+      const p2 = player2Id?.toString();
+
+      const newGame = {
+        gameId,
+        players: [p1, p2],
+        board: Array(9).fill(null),
+        turn: p1,
+        status: "active",
+        winner: null
+      };
+
+      activeGames.set(gameId, newGame);
+
+      // Route the new game state to all devices owned by both players
+      [p1, p2].forEach(userId => {
+        const userSockets = onlineUsers.get(userId);
+        if (userSockets) {
+          userSockets.forEach(socketId => {
+            io.to(socketId).emit("game-updated", newGame);
+          });
+        }
+      });
+    });
+
+    // 2. Handle Moves
+    socket.on("make-move", ({ gameId, playerId, cellIndex }) => {
+      const game = activeGames.get(gameId?.toString());
+      const playerStrId = playerId?.toString();
+
+      // Validation guards
+      if (!game || game.status !== "active" || game.turn !== playerStrId) return;
+      if (game.board[cellIndex] !== null) return;
+
+      // Assign marker and update board
+      const marker = game.players[0] === playerStrId ? "X" : "O";
+      game.board[cellIndex] = marker;
+
+      // Check win/draw state
+      if (checkWin(game.board)) {
+        game.status = "won";
+        game.winner = playerStrId;
+      } else if (game.board.every(cell => cell !== null)) {
+        game.status = "draw";
+      } else {
+        game.turn = game.players.find(id => id !== playerStrId);
+      }
+
+      activeGames.set(game.gameId, game);
+
+      // Route updated state to both players
+      game.players.forEach(userId => {
+        const userSockets = onlineUsers.get(userId);
+        if (userSockets) {
+          userSockets.forEach(socketId => {
+            io.to(socketId).emit("game-updated", game);
+          });
+        }
+      });
+    });
+
+    // 3. Reset Game
+    socket.on("reset-game", ({ gameId }) => {
+      const game = activeGames.get(gameId?.toString());
+      if (!game) return;
+
+      game.board = Array(9).fill(null);
+      game.status = "active";
+      game.winner = null;
+      game.turn = game.players[0];
+
+      activeGames.set(game.gameId, game);
+
+      // Route reset state to both players
+      game.players.forEach(userId => {
+        const userSockets = onlineUsers.get(userId);
+        if (userSockets) {
+          userSockets.forEach(socketId => {
+            io.to(socketId).emit("game-updated", game);
+          });
+        }
+      });
     });
     // ---------------------------------------------
 

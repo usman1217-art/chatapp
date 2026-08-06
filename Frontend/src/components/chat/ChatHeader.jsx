@@ -5,7 +5,9 @@ import { useSocket } from "../../context/SocketContext";
 function ChatHeader({ onStartCall }) {
   const { selectedChat, setSelectedChat, setChats } = useChat();
   const { user } = useAuth();
-  const { onlineUsers, isTyping } = useSocket();
+  
+  // --- ADDED: Extracted `socket` to emit the game challenge ---
+  const { onlineUsers, isTyping, socket } = useSocket();
 
   if (!selectedChat) return null;
 
@@ -86,7 +88,6 @@ function ChatHeader({ onStartCall }) {
           )}
         </div>
 
-        {/* 🔴 FIXED: added flex-1 and min-w-0 to prevent layout expansion on mobile viewports */}
         <div className="flex flex-col justify-center min-w-0 flex-1">
           <h2 className="font-bold text-base md:text-lg text-slate-900 dark:text-slate-100 leading-tight truncate">
             {otherUser?.name || "User"}
@@ -118,9 +119,30 @@ function ChatHeader({ onStartCall }) {
       </div>
 
       {/* Right side: Action Buttons */}
-      {/* 🔴 FIXED: Added shrink-0 to prevent buttons from disappearing on mobile */}
       <div className="flex items-center gap-1 md:gap-2 shrink-0">
         
+        {/* --- NEW: GAME CHALLENGE BUTTON --- */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (socket) {
+              socket.emit("initiate-game", {
+                chatId: selectedChat._id || selectedChat.id,
+                player1Id: user._id || user,
+                player2Id: otherUser._id || otherUser,
+              });
+            }
+          }}
+          className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-full transition-all duration-200 cursor-pointer active:scale-95"
+          title="Play Tic-Tac-Toe"
+        >
+          {/* Minimalist Gamepad SVG */}
+          <svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+            <rect x="2" y="6" width="20" height="12" rx="3" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M6 12h4m-2-2v4m10-2h.01M16 10h.01" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
         {/* --- VOICE CALL BUTTON --- */}
         <button
           onClick={(e) => {
