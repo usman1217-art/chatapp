@@ -71,8 +71,8 @@
   --theme-900: #0f172a;
   --theme-950: #020617;
   
-  --app-bg-image-light: url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1920&q=80');
-  --app-bg-image-dark: url('https://images.unsplash.com/photo-1477346611705-65d1883cee1e?w=1920&q=80');
+  --app-bg-image-light: url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=3840&q=100');
+  --app-bg-image-dark: url('https://images.unsplash.com/photo-1477346611705-65d1883cee1e?w=3840&q=100');
 }
 
 [data-theme="neon"] {
@@ -88,8 +88,8 @@
   --theme-800: #3b0764;
   --theme-900: #2e1065;
   --theme-950: #170535;
-  --app-bg-image-light: url('https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?w=1920&q=80');
-  --app-bg-image-dark: url('https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=1920&q=80');
+  --app-bg-image-light: url('https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?w=3840&q=100');
+  --app-bg-image-dark: url('https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=3840&q=100');
 }
 
 
@@ -124,8 +124,8 @@
   --theme-800: #9a3412;
   --theme-900: #7c2d12;
   --theme-950: #431407;
-  --app-bg-image-light: url('https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1920&q=80');
-  --app-bg-image-dark: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80');
+  --app-bg-image-light: url('https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=3840&q=100');
+  --app-bg-image-dark: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=3840&q=100');
 }
 
 
@@ -144,8 +144,8 @@
   --theme-900: #0a0a0a;
   --theme-950: #000000; /* Pure Black */
   
-  --app-bg-image-light: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&q=80');
-  --app-bg-image-dark: url('https://images.unsplash.com/photo-1462332420958-a05d1e002413?w=1920&q=80');
+  --app-bg-image-light: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=3840&q=100');
+  --app-bg-image-dark: url('https://images.unsplash.com/photo-1462332420958-a05d1e002413?w=3840&q=100');
 }
 
 [data-theme="spiderman"] {
