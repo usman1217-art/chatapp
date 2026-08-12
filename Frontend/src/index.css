@@ -266,10 +266,10 @@
   }
 
   .glass-panel {
-    @apply bg-white/40 backdrop-blur-2xl border-t border-l border-black/10 shadow-2xl;
+    @apply bg-white/60 md:bg-white/40 backdrop-blur-none md:backdrop-blur-2xl border-t border-l border-black/10 shadow-2xl;
   }
   .dark .glass-panel {
-    @apply bg-black/40 border-white/10;
+    @apply bg-black/60 md:bg-black/40 border-white/10;
   }
 
   .glass-input {
