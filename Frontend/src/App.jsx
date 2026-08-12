@@ -12,10 +12,12 @@ import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import VoiceCallModal from "./components/chat/VoiceCallModal";
 import { useSocket } from "./context/SocketContext";
+import { useAppTheme } from "./context/ThemeContext";
 
 function App() {
+  const { theme, colorScheme } = useAppTheme();
   const { socket } = useSocket();
-  
+
   // --- GLOBAL INCOMING CALL STATE ---
   const [incomingCall, setIncomingCall] = useState(null);
 
@@ -56,16 +58,15 @@ function App() {
     });
 
     // 2. Listen for background voice calls
-    socket.on("incoming-call", ({ signal, from, name, avatar }) => { // 👈 Make sure avatar is destructured here
-      setIncomingCallData({
+    socket.on("incoming-call", ({ signal, from, name, avatar }) => {
+      setIncomingCall({
         signal,
         caller: {
           _id: from,
           name: name,
-          avatar: avatar // 👈 Make sure it gets passed into the modal's receiver prop!
+          avatar: avatar
         }
       });
-    });
       // Trigger a lingering push alert if tabbed out
       if (document.hidden && Notification.permission === "granted") {
         const callNotification = new Notification(`📞 Incoming Call`, {
@@ -87,12 +88,17 @@ function App() {
     };
   }, [socket]);
 
+
   return (
-    // Global App Wrapper for the Dark Navy Theme
-    <div className="min-h-screen bg-[#0a192f] text-slate-200 transition-colors duration-300 font-sans selection:bg-indigo-500/30">
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
+    // Global App Wrapper with dynamic background
+    <div 
+      className="min-h-screen text-slate-200 transition-colors duration-300 font-sans selection:bg-slate-500/30"
+    >
+
+      <div className="relative z-10 h-full flex flex-col">
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
@@ -127,6 +133,7 @@ function App() {
           onClose={() => setIncomingCall(null)}
         />
       )}
+      </div>
     </div>
   );
 }

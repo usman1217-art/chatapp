@@ -1,5 +1,5 @@
 /* Import a premium geometric font from Google */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 /* Initialize Tailwind v4 */
 @import "tailwindcss";
@@ -9,7 +9,20 @@
 
 @theme {
   /* Override the default sans font with our new premium one */
-  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-sans: "Outfit", system-ui, -apple-system, sans-serif;
+  
+  /* Redefine Tailwind's slate scale for multi-theme support */
+  --color-slate-50: var(--theme-50);
+  --color-slate-100: var(--theme-100);
+  --color-slate-200: var(--theme-200);
+  --color-slate-300: var(--theme-300);
+  --color-slate-400: var(--theme-400);
+  --color-slate-500: var(--theme-500);
+  --color-slate-600: var(--theme-600);
+  --color-slate-700: var(--theme-700);
+  --color-slate-800: var(--theme-800);
+  --color-slate-900: var(--theme-900);
+  --color-slate-950: var(--theme-950);
   
   /* Smooth layout animations */
   --animate-fade-in: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -37,15 +50,161 @@
     from { opacity: 0; transform: scale(0.92); }
     to { opacity: 1; transform: scale(1); }
   }
+  @keyframes fade-out {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.5); }
+  }
 }
 
-/* Bulletproof base styles to ensure text ALWAYS shows */
+/* Multi-Theme Data Definitions */
+:root {
+  /* Default Monochrome (Standard Slate) */
+  --theme-50: #f8fafc;
+  --theme-100: #f1f5f9;
+  --theme-200: #e2e8f0;
+  --theme-300: #cbd5e1;
+  --theme-400: #94a3b8;
+  --theme-500: #64748b;
+  --theme-600: #475569;
+  --theme-700: #334155;
+  --theme-800: #1e293b;
+  --theme-900: #0f172a;
+  --theme-950: #020617;
+  
+  --app-bg-image-light: url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1920&q=80');
+  --app-bg-image-dark: url('https://images.unsplash.com/photo-1477346611705-65d1883cee1e?w=1920&q=80');
+}
+
+[data-theme="neon"] {
+  /* Midnight Neon (Deep Purple / Neon Pink) */
+  --theme-50: #fae8ff;
+  --theme-100: #f3e8ff;
+  --theme-200: #e9d5ff;
+  --theme-300: #d8b4fe;
+  --theme-400: #c084fc;
+  --theme-500: #a855f7;
+  --theme-600: #9333ea;
+  --theme-700: #7e22ce;
+  --theme-800: #3b0764;
+  --theme-900: #2e1065;
+  --theme-950: #170535;
+  --app-bg-image-light: url('https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?w=1920&q=80');
+  --app-bg-image-dark: url('https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=1920&q=80');
+}
+
+
+[data-theme="ocean"] {
+  /* Ocean Breeze (Teal & Turquoise) */
+  --theme-50: #f0fdfa;
+  --theme-100: #ccfbf1;
+  --theme-200: #99f6e4;
+  --theme-300: #5eead4;
+  --theme-400: #2dd4bf;
+  --theme-500: #14b8a6;
+  --theme-600: #0d9488;
+  --theme-700: #0f766e;
+  --theme-800: #115e59;
+  --theme-900: #134e4a;
+  --theme-950: #042f2e;
+  --app-bg-image-light: url('/bg_ocean_light.jpg');
+  --app-bg-image-dark: url('/bg_ocean_dark.jpg');
+}
+
+
+[data-theme="sunset"] {
+  /* Sunset Glow (Charcoal & Warm Orange) */
+  --theme-50: #fff7ed;
+  --theme-100: #ffedd5;
+  --theme-200: #fed7aa;
+  --theme-300: #fdba74;
+  --theme-400: #fb923c;
+  --theme-500: #f97316;
+  --theme-600: #ea580c;
+  --theme-700: #c2410c;
+  --theme-800: #9a3412;
+  --theme-900: #7c2d12;
+  --theme-950: #431407;
+  --app-bg-image-light: url('https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1920&q=80');
+  --app-bg-image-dark: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80');
+}
+
+
+[data-theme="odyssey"] {
+  /* 2001: A Space Odyssey (HAL 9000 / Discovery One UI) */
+  /* Stark Black & White with intense Red and Yellow accents */
+  --theme-50: #ffffff; /* Pure White */
+  --theme-100: #f4f4f5;
+  --theme-200: #e4e4e7;
+  --theme-300: #d4d4d8;
+  --theme-400: #facc15; /* Warning Yellow */
+  --theme-500: #ef4444; /* HAL 9000 Red (maps to text-slate-500/bg-slate-500) */
+  --theme-600: #dc2626; /* Deep Red */
+  --theme-700: #404040;
+  --theme-800: #262626;
+  --theme-900: #0a0a0a;
+  --theme-950: #000000; /* Pure Black */
+  
+  --app-bg-image-light: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&q=80');
+  --app-bg-image-dark: url('https://images.unsplash.com/photo-1462332420958-a05d1e002413?w=1920&q=80');
+}
+
+[data-theme="spiderman"] {
+  /* Spider-Man (Crimson Reds & NYC Wallpapers) */
+  --theme-50: #fef2f2;
+  --theme-100: #fee2e2;
+  --theme-200: #fecaca;
+  --theme-300: #fca5a5;
+  --theme-400: #f87171;
+  --theme-500: #ef4444;
+  --theme-600: #dc2626;
+  --theme-700: #b91c1c;
+  --theme-800: #991b1b;
+  --theme-900: #7f1d1d;
+  --theme-950: #020617; /* Very dark slate/black for contrast */
+  
+  --app-bg-image-light: url('https://i.pinimg.com/736x/7d/f0/1d/7df01d75874f2c2de2ea5c18c4e89fdb.jpg');
+  --app-bg-image-dark: url('https://i.pinimg.com/736x/7d/f0/1d/7df01d75874f2c2de2ea5c18c4e89fdb.jpg');
+}
+
+[data-theme="ertugrul"] {
+  /* Ertugrul Ghazi (Kayi Blue/Teal & Historical Aesthetic) */
+  --theme-50: #f8fafc;
+  --theme-100: #f1f5f9;
+  --theme-200: #e2e8f0;
+  --theme-300: #cbd5e1;
+  --theme-400: #fbbf24; /* Amber/Gold */
+  --theme-500: #d97706; /* Gold Accent for Bubbles/Buttons */
+  --theme-600: #b45309; /* Dark Gold */
+  --theme-700: #0f766e; /* Kayi Blue/Teal */
+  --theme-800: #115e59;
+  --theme-900: #134e4a;
+  --theme-950: #042f2e; /* Very dark teal/blue */
+  
+  --app-bg-image-light: url('https://i.pinimg.com/736x/f3/23/0a/f3230aae972272e8cd6ef9417beea88c.jpg');
+  --app-bg-image-dark: url('https://i.pinimg.com/736x/f3/23/0a/f3230aae972272e8cd6ef9417beea88c.jpg');
+}
+
+
+
+/* Bulletproof base styles */
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800 antialiased selection:bg-indigo-500/30;
+    @apply text-slate-900 antialiased selection:bg-slate-500/30;
+    background-color: var(--theme-50);
+    background-image: var(--app-bg-image-light);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   .dark body {
-    @apply bg-[#0a192f] text-slate-100 selection:bg-indigo-500/30;
+    @apply text-slate-100;
+    background-color: var(--theme-950);
+    background-image: var(--app-bg-image-dark);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
   }
 }
 
@@ -97,5 +256,59 @@
   @keyframes typing-bounce {
     0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
     30% { transform: translateY(-3px); opacity: 1; }
+  }
+
+  .glass {
+    @apply bg-black/5 backdrop-blur-xl border border-black/10 shadow-lg shadow-black/5;
+  }
+  .dark .glass {
+    @apply bg-white/5 border-white/10 shadow-black/20;
+  }
+
+  .glass-panel {
+    @apply bg-white/40 backdrop-blur-2xl border-t border-l border-black/10 shadow-2xl;
+  }
+  .dark .glass-panel {
+    @apply bg-black/40 border-white/10;
+  }
+
+  .glass-input {
+    @apply bg-black/5 backdrop-blur-md border border-black/10 text-slate-900 placeholder-slate-500 focus:bg-black/10 focus:border-slate-500/50 focus:ring-1 focus:ring-slate-500 transition-all outline-none;
+  }
+  .dark .glass-input {
+    @apply bg-white/5 border-white/10 text-white placeholder-slate-400 focus:bg-white/10;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.1), 0 0 20px rgba(0, 0, 0, 0.05);
+  }
+  .dark .text-glow {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.1);
+  }
+
+  .text-neon {
+    @apply text-slate-900 font-bold tracking-tight drop-shadow-sm;
+  }
+  .dark .text-neon {
+    @apply text-white drop-shadow-md;
+  }
+
+  .glass-button {
+    @apply bg-slate-900 text-white hover:bg-slate-800 backdrop-blur-md border border-black/20 shadow-[0_0_15px_rgba(0,0,0,0.2)] hover:shadow-[0_0_25px_rgba(0,0,0,0.3)] transition-all duration-300 font-bold;
+  }
+  .dark .glass-button {
+    @apply bg-white text-black hover:bg-slate-200 border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:shadow-[0_0_25px_rgba(255,255,255,0.4)];
+  }
+
+  .theme-bg {
+    background-image: var(--app-bg-image-light);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    transition: background-image 0.5s ease-in-out;
+  }
+  .dark .theme-bg {
+    background-image: var(--app-bg-image-dark);
   }
 }

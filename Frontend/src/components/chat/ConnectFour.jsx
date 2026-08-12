@@ -31,7 +31,7 @@ function ConnectFour({ activeGame, setActiveGame, socket }) {
   };
 
   return (
-    <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 p-5 rounded-3xl shadow-2xl max-w-[320px] w-full text-center transition-all duration-500 animate-[fade-in_0.3s_ease-out]">
+    <div className="bg-white/95 dark:bg-[#050505]/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 p-5 rounded-3xl shadow-2xl max-w-[320px] w-full text-center transition-all duration-500 animate-[fade-in_0.3s_ease-out]">
       
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
@@ -68,7 +68,7 @@ function ConnectFour({ activeGame, setActiveGame, socket }) {
       </div>
 
       {/* Connect Four 6x7 Grid Board Canvas */}
-      <div className="bg-indigo-600/10 dark:bg-indigo-950/40 p-3 rounded-2xl border border-indigo-500/20 shadow-inner inline-block max-w-full mx-auto">
+      <div className="bg-slate-100 dark:bg-slate-900/40 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-inner inline-block max-w-full mx-auto">
         
         {/* Interactive Column Guide Headers (Top row drop arrows) */}
         <div className="grid grid-cols-7 gap-1.5 mb-2 px-0.5">
@@ -80,7 +80,7 @@ function ConnectFour({ activeGame, setActiveGame, socket }) {
               className={`text-sm font-bold h-6 flex items-center justify-center rounded-md transition-all duration-150 select-none cursor-pointer
                 ${myTurn && activeGame.status === "active" && activeGame.board[colIdx] === null
                   ? isP1 
-                    ? "hover:bg-indigo-500/20 text-indigo-400 animate-bounce" 
+                    ? "hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 animate-bounce" 
                     : "hover:bg-emerald-500/20 text-emerald-400 animate-bounce"
                   : "opacity-0 cursor-default"
                 }`}
@@ -91,16 +91,16 @@ function ConnectFour({ activeGame, setActiveGame, socket }) {
         </div>
 
         {/* 6 Rows x 7 Columns Grid Matrix layout */}
-        <div className="grid grid-cols-7 gap-1.5 bg-indigo-600 dark:bg-indigo-900/90 p-2.5 rounded-xl shadow-lg border border-indigo-500/30">
+        <div className="grid grid-cols-7 gap-1.5 bg-slate-200 dark:bg-slate-800/90 p-2.5 rounded-xl shadow-lg border border-slate-300 dark:border-slate-700">
           {activeGame.board.map((cell, index) => (
             <div 
               key={index} 
-              className="w-[30px] h-[30px] rounded-full bg-white dark:bg-[#0a192f] shadow-inner relative flex items-center justify-center border border-indigo-700/50"
+              className="w-[30px] h-[30px] rounded-full bg-white dark:bg-black shadow-inner relative flex items-center justify-center border border-slate-300 dark:border-slate-700"
             >
               {cell && (
                 <div className={`w-full h-full rounded-full transition-all duration-500 absolute scale-95 shadow-md flex items-center justify-center animate-[bounce_0.4s_ease-out_1]
                   ${cell === "R" 
-                    ? "bg-gradient-to-tr from-indigo-700 to-indigo-400 border border-indigo-300/40" 
+                    ? "bg-slate-800 dark:bg-slate-100 border border-slate-700 dark:border-slate-200" 
                     : "bg-gradient-to-tr from-emerald-700 to-emerald-400 border border-emerald-300/40"
                   }`} 
                 />
@@ -115,7 +115,7 @@ function ConnectFour({ activeGame, setActiveGame, socket }) {
         <div className="flex flex-col gap-2 pt-2">
           <button
             onClick={() => socket.emit("reset-game", { gameId })}
-            className="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold text-xs py-3 rounded-xl transition shadow-md active:scale-95 cursor-pointer"
+            className="w-full bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 text-white dark:text-slate-900 font-bold text-xs py-3 rounded-xl transition shadow-md active:scale-95 cursor-pointer"
           >
             🔄 Play Again
           </button>

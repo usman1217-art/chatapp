@@ -38,7 +38,7 @@ function ForgotPassword() {
           <p className="text-slate-300 text-sm">
             If an account exists for <b>{email}</b>, a reset link is on its way.
           </p>
-          <Link to="/login" className="text-indigo-400 font-medium hover:underline text-sm">
+          <Link to="/login" className="text-slate-900 dark:text-white font-bold hover:underline text-sm">
             Back to login
           </Link>
         </div>
@@ -59,7 +59,7 @@ function ForgotPassword() {
 
           <p className="text-center text-sm text-slate-400">
             Remembered your password?{" "}
-            <Link to="/login" className="text-indigo-400 font-medium hover:underline">
+            <Link to="/login" className="text-slate-900 dark:text-white font-bold hover:underline">
               Log in
             </Link>
           </p>

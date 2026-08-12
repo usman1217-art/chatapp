@@ -174,14 +174,14 @@ function MessageInput() {
   };
 
   return (
-    <div className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a192f] p-3 sm:p-4 flex flex-col gap-2 transition-colors duration-300 shrink-0">
+    <div className="border-t border-white/10 glass-panel p-3 sm:p-4 flex flex-col gap-2 shrink-0">
       
       {/* Reply UI Overlay */}
       {replyingTo && (
-        <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 border-l-4 border-indigo-500 px-4 py-2.5 rounded-lg mb-1 animate-fade-in shadow-sm border border-slate-200 dark:border-transparent">
+        <div className="flex items-center justify-between bg-slate-100 dark:bg-white/10 border-l-4 border-slate-400 dark:border-white/50 px-4 py-2.5 rounded-lg mb-1 animate-fade-in shadow-sm border-r border-t border-b border-slate-200 dark:border-white/10">
           <div className="truncate text-xs">
-            <span className="text-indigo-600 dark:text-indigo-400 font-bold block mb-0.5">Replying to message</span>
-            <span className="text-slate-600 dark:text-slate-300">{replyingTo.text || "📷 Image"}</span>
+            <span className="text-slate-900 dark:text-white font-bold block mb-0.5">Replying to message</span>
+            <span className="text-slate-500 dark:text-slate-300">{replyingTo.text || "📷 Image"}</span>
           </div>
           <button onClick={() => setReplyingTo(null)} className="text-slate-400 hover:text-slate-800 dark:hover:text-white text-xl font-bold ml-2 transition-colors">
             &times;
@@ -199,7 +199,7 @@ function MessageInput() {
           />
           <button 
             onClick={clearImage}
-            className="absolute -top-2.5 -right-2.5 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 shadow-md transition-all border-2 border-white dark:border-[#0a192f]"
+            className="absolute -top-2.5 -right-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full w-6 h-6 flex items-center justify-center hover:bg-slate-800 dark:hover:bg-slate-200 shadow-md transition-all border-2 border-white dark:border-[#0a192f]"
             title="Remove image"
           >
             &times;
@@ -221,7 +221,7 @@ function MessageInput() {
         <button
           disabled={isCompressing}
           onClick={() => fileInputRef.current.click()}
-          className="w-12 h-12 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-all shrink-0 flex items-center justify-center border border-slate-200 dark:border-slate-700/60 shadow-sm disabled:opacity-40 cursor-pointer"
+          className="w-12 h-12 text-slate-500 hover:text-slate-900 hover:bg-slate-200 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 rounded-full transition-all shrink-0 flex items-center justify-center border border-slate-200 dark:border-white/10 shadow-sm disabled:opacity-40 cursor-pointer"
           title="Attach Image"
         >
           <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,7 +235,7 @@ function MessageInput() {
           value={text}
           onChange={(e) => handleTyping(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
-          className="flex-1 min-w-0 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-500 dark:focus:border-indigo-500 text-slate-900 dark:text-slate-100 px-4 sm:px-5 py-3 rounded-2xl sm:rounded-full focus:outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-500/20 transition-all placeholder-slate-500 dark:placeholder-slate-400 shadow-inner font-medium"
+          className="glass-input flex-1 min-w-0 px-4 sm:px-5 py-3 rounded-2xl sm:rounded-full font-medium"
           placeholder={isCompressing ? "Compressing image..." : "Type a message..."}
           disabled={isCompressing}
         />
@@ -244,7 +244,7 @@ function MessageInput() {
         <button
           onClick={submit}
           disabled={(!text.trim() && !image) || isCompressing}
-          className="h-12 px-4 sm:px-6 md:h-14 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 shrink-0 font-bold tracking-wide active:scale-95 cursor-pointer"
+          className="glass-button h-12 px-4 sm:px-6 md:h-14 disabled:opacity-50 disabled:cursor-not-allowed rounded-full flex items-center justify-center gap-2 shrink-0 font-bold tracking-wide cursor-pointer"
           title="Send Message"
         >
           {/* Text is hidden on tiny phones, shows as a standard horizontal button on slightly larger screens */}

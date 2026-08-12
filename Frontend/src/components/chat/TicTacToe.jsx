@@ -30,11 +30,11 @@ function TicTacToe({ activeGame, setActiveGame, socket }) {
   };
 
   return (
-    <div className="bg-white/90 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-2xl max-w-[280px] w-full text-center transition-all duration-500 ease-out transform scale-100 animate-[fade-in_0.3s_ease-out]">
+    <div className="bg-white/90 dark:bg-[#050505]/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-2xl max-w-[280px] w-full text-center transition-all duration-500 ease-out transform scale-100 animate-[fade-in_0.3s_ease-out]">
       
       {/* Header */}
       <div className="flex justify-between items-center mb-5">
-        <h4 className="text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+        <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white flex items-center gap-2">
           <span className="animate-pulse">🎮</span> Tic-Tac-Toe
         </h4>
         <button 
@@ -77,9 +77,9 @@ function TicTacToe({ activeGame, setActiveGame, socket }) {
             onClick={() => handleCellClick(index)}
             disabled={!myTurn || cell !== null || activeGame.status !== "active"}
             className={`w-[60px] h-[60px] rounded-2xl text-2xl font-black flex items-center justify-center transition-all duration-200 border select-none overflow-hidden
-              ${cell === "X" ? "text-indigo-600 bg-indigo-500/10 border-indigo-500/30 dark:text-indigo-400 drop-shadow-md" : ""}
-              ${cell === "O" ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/30 dark:text-emerald-400 drop-shadow-md" : ""}
-              ${!cell && myTurn && activeGame.status === "active" ? "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 hover:bg-indigo-500/10 hover:border-indigo-500/50 cursor-pointer active:scale-75 hover:scale-105" : "border-slate-200/40 dark:border-slate-800/40 cursor-default"}
+              ${cell === "X" ? "text-slate-900 bg-slate-900/10 border-slate-900/30 dark:text-white dark:bg-white/10 dark:border-white/30 drop-shadow-md" : ""}
+              ${cell === "O" ? "text-rose-500 bg-rose-500/10 border-rose-500/30 drop-shadow-md" : ""}
+              ${!cell && myTurn && activeGame.status === "active" ? "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 hover:bg-slate-900/10 hover:border-slate-900/50 dark:hover:bg-white/10 dark:hover:border-white/50 cursor-pointer active:scale-75 hover:scale-105" : "border-slate-200/40 dark:border-slate-800/40 cursor-default"}
             `}
           >
             {/* Pop-in animation for X and O */}
@@ -95,7 +95,7 @@ function TicTacToe({ activeGame, setActiveGame, socket }) {
         <div className="flex flex-col gap-2.5 pt-2">
           <button
             onClick={() => socket.emit("reset-game", { gameId })}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-3 rounded-xl transition-all duration-200 shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.23)] active:scale-95 hover:-translate-y-0.5 cursor-pointer"
+            className="w-full bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 text-white dark:text-slate-900 font-bold text-xs py-3 rounded-xl transition-all duration-200 shadow-sm active:scale-95 hover:-translate-y-0.5 cursor-pointer"
           >
             🔄 Play Again
           </button>

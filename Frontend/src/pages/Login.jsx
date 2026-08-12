@@ -47,7 +47,7 @@ function Login() {
   };
 
   return (
-    <div className="flex min-h-screen w-full relative overflow-x-hidden font-sans bg-[#0a192f]">
+    <div className="flex min-h-screen w-full relative overflow-x-hidden font-sans bg-transparent">
       
       {/* --- FULL SCREEN VIDEO BACKGROUND --- */}
       <video
@@ -59,7 +59,7 @@ function Login() {
       >
         <source src={bgVideo} type="video/mp4" />
       </video>
-      <div className="absolute inset-0 bg-indigo-900/20 dark:bg-[#0a192f]/40 z-10 mix-blend-overlay"></div>
+      <div className="absolute inset-0 bg-black/40 z-10 mix-blend-overlay"></div>
 
       {/* --- LEFT SIDE: Branding Area --- */}
       <div className="hidden lg:flex w-1/2 relative z-20 items-center justify-center flex-col text-white p-12 text-center drop-shadow-2xl">
@@ -68,20 +68,20 @@ function Login() {
       </div>
 
       {/* --- RIGHT SIDE: FROSTED GLASS PANEL --- */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-12 relative z-20 overflow-y-auto bg-white/70 dark:bg-[#0a192f]/75 backdrop-blur-2xl border-l border-white/40 dark:border-slate-700/50 shadow-[0_0_50px_rgba(0,0,0,0.15)] min-h-screen">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-12 relative z-20 overflow-y-auto glass-panel border-l-white/20 min-h-screen">
         
         {/* ✅ FIXED: High-fidelity Full-Panel Loading State for standard login or Google Oauth */}
         {(loading || googleLoading) && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 dark:bg-[#0a192f]/85 backdrop-blur-md gap-4 animate-[fade-in_0.2s_ease-out]">
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center glass gap-4 animate-[fade-in_0.2s_ease-out]">
             <div className="relative w-16 h-16">
-              <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20 animate-pulse shadow-lg"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-t-indigo-600 dark:border-t-indigo-400 animate-spin"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-white/20 animate-pulse shadow-lg"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-t-white animate-spin"></div>
             </div>
             <div className="space-y-1 text-center">
-              <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+              <h3 className="text-xl font-black text-white tracking-tight text-glow">
                 {googleLoading ? "Connecting Google Profile" : "Establishing Session"}
               </h3>
-              <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 tracking-widest uppercase animate-pulse">
+              <p className="text-xs font-bold text-slate-400 tracking-widest uppercase animate-pulse">
                 Syncing user credentials...
               </p>
             </div>
@@ -116,7 +116,7 @@ function Login() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 bottom-[11px] text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none cursor-pointer"
+                    className="absolute right-3 bottom-[11px] text-slate-400 hover:text-white transition-colors focus:outline-none cursor-pointer"
                     title={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
@@ -133,7 +133,7 @@ function Login() {
                 </div>
 
                 <div className="flex justify-end pt-1">
-                  <Link to="/forgot-password" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors duration-200 hover:underline">
+                  <Link to="/forgot-password" className="text-xs font-semibold text-white hover:text-slate-300 transition-colors duration-200 hover:underline">
                     Forgot password?
                   </Link>
                 </div>
@@ -144,16 +144,16 @@ function Login() {
               </div>
 
               <div className="flex items-center gap-4 py-2">
-                <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700/60 transition-colors duration-300" />
-                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 select-none">OR</span>
-                <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700/60 transition-colors duration-300" />
+                <div className="flex-1 h-px bg-white/20 transition-colors duration-300" />
+                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 select-none">OR</span>
+                <div className="flex-1 h-px bg-white/20 transition-colors duration-300" />
               </div>
 
               <GoogleAuthButton setLoading={setGoogleLoading} />
 
-              <p className="text-center text-sm font-medium text-slate-600 dark:text-slate-400 pt-3">
+              <p className="text-center text-sm font-medium text-slate-400 pt-3">
                 Don't have an account?{" "}
-                <Link to="/register" className="text-indigo-600 dark:text-indigo-400 font-bold hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors duration-200 hover:underline ml-1">
+                <Link to="/register" className="text-white font-bold hover:text-slate-300 transition-colors duration-200 hover:underline ml-1">
                   Create one
                 </Link>
               </p>

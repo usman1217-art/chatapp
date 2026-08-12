@@ -24,10 +24,10 @@ function VerifyEmail() {
   }, [token, navigate]);
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center gap-4 bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300 px-6 text-center">
+    <div className="h-screen flex flex-col items-center justify-center gap-4 bg-transparent transition-colors duration-300 px-6 text-center">
       {status === "loading" && (
         <>
-          <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-slate-900 dark:border-white border-t-transparent rounded-full animate-spin" />
           <p className="text-slate-600 dark:text-slate-400 font-medium">Verifying your email...</p>
         </>
       )}
@@ -44,7 +44,7 @@ function VerifyEmail() {
         <>
           <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/10 flex items-center justify-center text-3xl shadow-sm">❌</div>
           <h1 className="text-xl font-semibold text-slate-800 dark:text-slate-100">{message}</h1>
-          <Link to="/login" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline text-sm">
+          <Link to="/login" className="text-slate-900 dark:text-white font-bold hover:underline text-sm">
             Back to login
           </Link>
         </>

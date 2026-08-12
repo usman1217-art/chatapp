@@ -8,8 +8,8 @@ function Input({ label, error, className = "", ...props }) {
       )}
 
       <input
-        className={`w-full bg-slate-800/80 border rounded-xl p-3 outline-none transition focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-slate-100 placeholder:text-slate-500 ${
-          error ? "border-red-500/60" : "border-slate-700"
+        className={`glass-input w-full rounded-xl p-3 ${
+          error ? "border-red-500/60 focus:border-red-500 focus:ring-red-500" : ""
         } ${className}`}
         {...props}
       />

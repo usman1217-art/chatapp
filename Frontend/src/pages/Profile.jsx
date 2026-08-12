@@ -252,8 +252,8 @@ function Profile() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex justify-center items-center h-screen bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+      <div className="flex-1 flex justify-center items-center h-screen bg-slate-50 dark:bg-transparent transition-colors duration-300">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-800 dark:border-white"></div>
       </div>
     );
   }
@@ -266,14 +266,14 @@ function Profile() {
     );
   }
 
-  const displayAvatar = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=4f46e5&color=fff&size=256`;
+  const displayAvatar = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&size=256`;
 
   return (
-    <div className="flex-1 flex flex-col items-center pt-6 pb-10 h-screen overflow-y-auto bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300 px-4 relative">
+      <div className="flex-1 flex flex-col items-center pt-6 pb-10 h-screen overflow-y-auto bg-transparent transition-colors duration-300 px-4 relative">
       
       {/* Toast Feedback */}
       {statusMessage && (
-        <div className="absolute top-4 z-40 px-4 py-2 bg-indigo-600 border border-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg animate-fade-in">
+        <div className="absolute top-4 z-40 px-4 py-2 bg-slate-800 dark:bg-white text-white dark:text-slate-900 border border-slate-700 dark:border-slate-200 text-xs font-bold rounded-xl shadow-lg animate-fade-in">
           {statusMessage}
         </div>
       )}
@@ -281,9 +281,9 @@ function Profile() {
       {/* --- CROP IMAGE MODAL --- */}
       {cropModal.show && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[500px] sm:h-[600px] animate-slide-up border border-slate-200 dark:border-slate-800">
+          <div className="bg-white dark:bg-[#050505] w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[500px] sm:h-[600px] animate-slide-up border border-slate-200 dark:border-slate-800">
             {/* Modal Header */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900 z-10">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-[#050505] z-10">
               <h3 className="text-slate-800 dark:text-slate-100 font-bold text-lg tracking-tight">Adjust Avatar</h3>
               <button onClick={cancelCrop} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-2xl leading-none">&times;</button>
             </div>
@@ -304,7 +304,7 @@ function Profile() {
             </div>
             
             {/* Controls & Footer */}
-            <div className="p-5 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-4 z-10">
+            <div className="p-5 bg-slate-50 dark:bg-[#050505] border-t border-slate-200 dark:border-slate-800 flex flex-col gap-4 z-10">
               <div className="flex items-center gap-4 px-2">
                 <span className="text-slate-500 text-sm">Zoom</span>
                 <input
@@ -314,7 +314,7 @@ function Profile() {
                   max={3}
                   step={0.1}
                   onChange={(e) => setZoom(e.target.value)}
-                  className="w-full accent-indigo-600 dark:accent-indigo-500 cursor-pointer"
+                  className="w-full accent-slate-800 dark:accent-white cursor-pointer"
                 />
               </div>
               <div className="flex justify-end gap-3 mt-2">
@@ -324,7 +324,7 @@ function Profile() {
                 <button 
                   onClick={handleCropSave} 
                   disabled={isUploading} 
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center shadow-sm disabled:opacity-50 transition-colors"
+                  className="px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 rounded-xl font-bold flex items-center shadow-sm disabled:opacity-50 transition-colors"
                 >
                   {isUploading ? "Uploading..." : "Save Picture"}
                 </button>
@@ -339,7 +339,7 @@ function Profile() {
       {/* Custom Confirmation Modal Overlay */}
       {confirmModal.show && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl max-w-sm w-full shadow-xl">
+          <div className="bg-white dark:bg-[#050505] border border-slate-200 dark:border-slate-800 p-6 rounded-2xl max-w-sm w-full shadow-xl">
             <h4 className="text-slate-800 dark:text-slate-100 font-bold text-base mb-3">Confirm Action</h4>
             <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{confirmModal.message}</p>
             <div className="flex justify-end gap-2">
@@ -351,7 +351,7 @@ function Profile() {
               </button>
               <button 
                 onClick={confirmModal.onConfirm}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-sm"
+                className="px-4 py-2 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-sm"
               >
                 Confirm
               </button>
@@ -366,7 +366,7 @@ function Profile() {
         <div className="flex justify-between items-center mb-6 px-1">
           <Link
             to="/"
-            className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors group"
+            className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors group"
           >
             <svg className="w-5 h-5 transform group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -377,7 +377,7 @@ function Profile() {
           {!isEditing ? (
             <button 
               onClick={() => setIsEditing(true)}
-              className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-100 dark:hover:bg-slate-700 transition-all shadow-sm cursor-pointer"
+              className="text-sm font-bold text-slate-900 dark:text-white hover:text-slate-700 dark:hover:text-slate-200 px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-all shadow-sm cursor-pointer"
             >
               Edit Profile
             </button>
@@ -395,7 +395,7 @@ function Profile() {
               </button>
               <button 
                 onClick={handleSaveProfile}
-                className="text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-1.5 rounded-lg shadow-sm transition-all flex items-center cursor-pointer"
+                className="text-sm font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 px-4 py-1.5 rounded-lg shadow-sm transition-all flex items-center cursor-pointer"
                 disabled={isSaving}
               >
                 {isSaving ? "Saving..." : "Save"}
@@ -405,7 +405,7 @@ function Profile() {
         </div>
 
         {/* Profile Settings Card */}
-        <div className="w-full p-8 rounded-2xl shadow-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/75 backdrop-blur-md transition-all duration-300">
+        <div className="glass-panel w-full p-8 rounded-2xl transition-all duration-300">
           
           <h2 className="text-2xl font-black text-center text-slate-800 dark:text-slate-100 mb-8 tracking-tight">
             Profile Settings
@@ -444,7 +444,7 @@ function Profile() {
               )}
             </div>
 
-            <p className="mt-3 text-xs text-indigo-600 dark:text-indigo-400 font-bold tracking-wide uppercase cursor-pointer hover:underline" onClick={handlePhotoClick}>
+            <p className="mt-3 text-xs text-slate-900 dark:text-white font-bold tracking-wide uppercase cursor-pointer hover:underline" onClick={handlePhotoClick}>
               Change Avatar
             </p>
             <input 
@@ -469,10 +469,10 @@ function Profile() {
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium focus:border-indigo-500 dark:focus:border-indigo-500 focus:outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium focus:border-slate-800 dark:focus:border-slate-300 focus:outline-none transition-all"
                 />
               ) : (
-                <div className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 font-semibold shadow-sm">
+                <div className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 font-semibold shadow-sm">
                   {user.name}
                 </div>
               )}
@@ -489,10 +489,10 @@ function Profile() {
                   onChange={(e) => setEditForm({ ...editForm, about: e.target.value })}
                   rows="3"
                   maxLength="150"
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium focus:border-indigo-500 dark:focus:border-indigo-500 focus:outline-none transition-all resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium focus:border-slate-800 dark:focus:border-slate-300 focus:outline-none transition-all resize-none"
                 />
               ) : (
-                <div className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-medium min-h-[88px] whitespace-pre-wrap break-words shadow-sm">
+                <div className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 font-medium min-h-[88px] whitespace-pre-wrap break-words shadow-sm">
                   {user.about || <span className="text-slate-400 dark:text-slate-500 italic">No description details provided.</span>}
                 </div>
               )}
@@ -503,7 +503,7 @@ function Profile() {
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 Email Address
               </label>
-              <div className="w-full px-4 py-3 rounded-xl bg-slate-200/50 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed select-none">
+              <div className="w-full px-4 py-3 rounded-xl bg-slate-200/50 dark:bg-black/20 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed select-none">
                 {user.email}
               </div>
             </div>
@@ -513,8 +513,8 @@ function Profile() {
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 User ID
               </label>
-              <div className="flex items-center shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
-                <div className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300 font-mono text-sm truncate select-all">
+              <div className="flex items-center shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-white/10">
+                <div className="flex-1 px-4 py-3 bg-slate-100 dark:bg-black/40 text-slate-700 dark:text-slate-300 font-mono text-sm truncate select-all">
                   {user.userId}
                 </div>
                 <button
@@ -522,7 +522,7 @@ function Profile() {
                   className={`px-5 py-3 text-sm font-bold tracking-wide transition-all duration-200 flex items-center justify-center min-w-[110px] select-none cursor-pointer ${
                     copied 
                       ? "bg-green-600 text-white" 
-                      : "bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white"
+                      : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200"
                   }`}
                 >
                   {copied ? "Copied!" : "Copy ID"}

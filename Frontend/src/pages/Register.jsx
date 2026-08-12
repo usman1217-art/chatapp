@@ -48,7 +48,7 @@ function Register() {
       >
         <source src={bgVideo} type="video/mp4" />
       </video>
-      <div className="absolute inset-0 bg-indigo-900/20 dark:bg-[#0a192f]/40 z-10 mix-blend-overlay"></div>
+      <div className="absolute inset-0 bg-black/40 z-10 mix-blend-overlay"></div>
 
       {/* --- LEFT SIDE: Branding Area --- */}
       <div className="hidden lg:flex w-1/2 relative z-20 items-center justify-center flex-col text-white p-12 text-center drop-shadow-2xl">
@@ -57,7 +57,7 @@ function Register() {
       </div>
 
       {/* --- RIGHT SIDE: FROSTED GLASS PANEL --- */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-12 relative z-20 overflow-y-auto bg-white/70 dark:bg-[#0a192f]/75 backdrop-blur-2xl border-l border-white/40 dark:border-slate-700/50 shadow-[0_0_50px_rgba(0,0,0,0.15)]">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-12 relative z-20 overflow-y-auto glass-panel border-l-white/20 min-h-screen">
         
         <div className="w-full max-w-md animate-fade-in py-4">
           <AuthCard title="Create your account" subtitle="Join and start chatting in seconds">
@@ -97,7 +97,7 @@ function Register() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 bottom-[11px] text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none"
+                    className="absolute right-3 bottom-[11px] text-slate-400 hover:text-white transition-colors focus:outline-none"
                     title={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
@@ -118,9 +118,9 @@ function Register() {
                 <Button type="submit" loading={loading}>Create account</Button>
               </div>
 
-              <p className="text-center text-sm font-medium text-slate-600 dark:text-slate-400 pt-3">
+              <p className="text-center text-sm font-medium text-slate-400 pt-3">
                 Already have an account?{" "}
-                <Link to="/login" className="text-indigo-600 dark:text-indigo-400 font-bold hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors duration-200 hover:underline ml-1">
+                <Link to="/login" className="text-white font-bold hover:text-slate-300 transition-colors duration-200 hover:underline ml-1">
                   Log in
                 </Link>
               </p>

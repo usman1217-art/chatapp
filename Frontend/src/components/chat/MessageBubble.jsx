@@ -118,9 +118,9 @@ function MessageBubble({ message }) {
     const element = document.getElementById(`message-${targetId}`);
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
-      element.classList.add("bg-indigo-500/20", "dark:bg-indigo-500/30");
+      element.classList.add("bg-slate-200", "dark:bg-white/20");
       setTimeout(() => {
-        element.classList.remove("bg-indigo-500/20", "dark:bg-indigo-500/30");
+        element.classList.remove("bg-slate-200", "dark:bg-white/20");
       }, 1500); 
     }
   };
@@ -134,7 +134,7 @@ function MessageBubble({ message }) {
     >
       {!message.deletedForEveryone && (
         <div 
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 p-2 rounded-full transition-opacity duration-200"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10 p-2 rounded-full transition-opacity duration-200"
           style={{ opacity: swipeX > 20 ? 1 : 0 }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -148,10 +148,10 @@ function MessageBubble({ message }) {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         style={{ transform: `translateX(${swipeX}px)` }}
-        className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-5 py-3.5 shadow-sm flex flex-col relative z-10 ${isSwiping.current ? 'duration-0' : 'duration-300'} ${
+        className={`max-w-[85%] md:max-w-[70%] rounded-3xl px-5 py-3.5 shadow-lg flex flex-col relative z-10 ${isSwiping.current ? 'duration-0' : 'duration-300'} ${
           own
-            ? "bg-indigo-600 text-white rounded-br-sm"
-            : "bg-white/80 dark:bg-slate-800/70 backdrop-blur-md border border-white/40 dark:border-slate-700/50 text-slate-900 dark:text-slate-100 rounded-bl-sm"
+            ? "bg-slate-500 text-white rounded-br-sm shadow-[0_0_15px_rgba(0,0,0,0.3)] dark:shadow-[0_0_15px_rgba(255,255,255,0.15)] backdrop-blur-md font-bold border border-white/20"
+            : "glass border-white/10 text-slate-100 rounded-bl-sm font-medium"
         }`}
       >
         {!message.deletedForEveryone && (isHovered || showMenu) && (
@@ -185,7 +185,7 @@ function MessageBubble({ message }) {
           <div 
             onClick={() => handleScrollToMessage(message.replyTo._id || message.replyTo)} 
             className={`border-l-4 p-2 rounded-md mb-2 text-xs max-w-full truncate backdrop-blur-sm cursor-pointer opacity-90 hover:opacity-100 transition-opacity ${
-              own ? "bg-white/20 border-white/50 text-white" : "bg-slate-200/50 dark:bg-slate-900/50 border-indigo-500 text-slate-800 dark:text-slate-200"
+              own ? "bg-white/20 border-white/50 text-white" : "bg-slate-200/50 dark:bg-slate-900/50 border-slate-400 text-slate-800 dark:text-slate-200"
             }`}
           >
             {message.replyTo.text || "📷 Media Attachment"}
@@ -203,7 +203,7 @@ function MessageBubble({ message }) {
 
         <p className={`leading-relaxed whitespace-pre-wrap break-words text-sm md:text-base font-medium ${
           message.deletedForEveryone 
-            ? own ? "italic text-indigo-200" : "italic text-slate-500 dark:text-slate-400 font-normal" 
+            ? own ? "italic text-slate-200" : "italic text-slate-500 dark:text-slate-400 font-normal" 
             : ""
         }`}>
           {message.deletedForEveryone ? "This message was deleted" : message.text}
@@ -213,7 +213,7 @@ function MessageBubble({ message }) {
         <div className="flex items-center justify-end gap-1.5 mt-1.5">
           <span
             className={`text-[10px] font-bold tracking-wider ${
-              own ? "text-indigo-200" : "text-slate-500 dark:text-slate-400"
+              own ? "text-slate-200" : "text-slate-500 dark:text-slate-400"
             }`}
           >
             {new Date(message.createdAt || Date.now()).toLocaleTimeString('en-US', {
@@ -227,7 +227,7 @@ function MessageBubble({ message }) {
           {own && !message.deletedForEveryone && (
             <div className="flex -ml-0.5">
               <svg 
-                className={`w-3.5 h-3.5 ${message.isRead ? "text-emerald-400" : "text-indigo-200/60"}`} 
+                className={`w-3.5 h-3.5 ${message.isRead ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`} 
                 fill="none" 
                 viewBox="0 0 24 24" 
                 stroke="currentColor" 
@@ -260,14 +260,14 @@ function MessageBubble({ message }) {
           }}
         >
           <div 
-            className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl w-full max-w-[300px] rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.25)] border border-white/50 dark:border-slate-700/50 flex flex-col overflow-hidden animate-scale-up"
+            className="glass-panel w-full max-w-[300px] rounded-3xl shadow-[0_8px_32px_0_rgba(255,255,255,0.1)] border border-white/20 flex flex-col overflow-hidden animate-scale-up"
             onClick={(e) => e.stopPropagation()} 
           >
-            <div className="flex justify-between items-center p-5 border-b border-slate-200/50 dark:border-slate-700/50">
-              <h3 className="font-black text-slate-800 dark:text-slate-100 text-sm uppercase tracking-widest">Options</h3>
+            <div className="flex justify-between items-center p-5 border-b border-white/10">
+              <h3 className="font-black text-slate-100 text-sm uppercase tracking-widest text-glow">Options</h3>
               <button 
                 onClick={() => setShowMenu(false)} 
-                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-2xl leading-none transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-white text-2xl leading-none transition-colors cursor-pointer"
               >
                 &times;
               </button>
@@ -279,7 +279,7 @@ function MessageBubble({ message }) {
                   setShowMenu(false);
                   handleDeleteForMe();
                 }}
-                className="w-full text-center px-4 py-3.5 bg-slate-100/50 hover:bg-slate-200 dark:bg-slate-800/50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-2xl transition-colors shadow-sm cursor-pointer"
+                className="w-full text-center px-4 py-3.5 bg-white/5 hover:bg-white/10 text-slate-100 font-bold rounded-2xl transition-colors shadow-sm cursor-pointer border border-white/5"
               >
                 Delete for me
               </button>
@@ -290,7 +290,7 @@ function MessageBubble({ message }) {
                     setShowMenu(false);
                     handleDeleteForEveryone();
                   }}
-                  className="w-full text-center px-4 py-3.5 bg-red-50/80 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold rounded-2xl border border-red-200/50 dark:border-red-900/30 transition-colors shadow-sm cursor-pointer"
+                  className="w-full text-center px-4 py-3.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold rounded-2xl border border-red-500/30 transition-colors shadow-sm cursor-pointer"
                 >
                   Delete for everyone
                 </button>

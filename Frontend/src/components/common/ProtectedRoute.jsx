@@ -11,10 +11,12 @@ function ProtectedRoute({ children }) {
     if(loading){
 
         return (
-            <div className="h-screen flex items-center justify-center bg-[#0a192f]">
-                <div className="flex flex-col items-center gap-3">
-                    <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-slate-400 text-sm">Loading your chats...</p>
+            <div className="w-full relative z-10">
+                <div className="h-screen flex items-center justify-center bg-transparent">
+                    <div className="flex flex-col items-center gap-5">
+                        <img src="/image.png" alt="Loading..." className="w-24 h-32 object-cover rounded-xl animate-[pulse_1.5s_ease-in-out_infinite] drop-shadow-[0_0_20px_rgba(255,255,255,0.2)] dark:drop-shadow-[0_0_20px_rgba(220,38,38,0.5)]" />
+                        <p className="text-slate-900 dark:text-slate-400 font-bold tracking-widest text-xs uppercase animate-pulse">Loading secure session...</p>
+                    </div>
                 </div>
             </div>
         );

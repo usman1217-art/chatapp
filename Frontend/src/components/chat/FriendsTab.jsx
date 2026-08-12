@@ -75,7 +75,7 @@ function FriendsTab() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300">
+    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-transparent transition-colors duration-300">
       <h2 className="text-slate-800 dark:text-slate-200 font-bold text-lg mb-4">My Friends</h2>
       
       {/* ✅ OPTION A: RENDER DYNAMIC SKELETON LOADER PLACEMENT WHILE FETCHING */}
@@ -118,14 +118,14 @@ function FriendsTab() {
                 <img
                   src={
                     friend.avatar ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.name)}&background=4f46e5&color=fff`
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.name)}`
                   }
                   alt={friend.name}
                   className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 transition-transform duration-200 group-hover:scale-105"
                 />
-                <div className="min-w-0">
-                  <h4 className="text-slate-900 dark:text-slate-100 font-semibold text-sm truncate">{friend.name}</h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">Click to chat</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-slate-900 dark:group-hover:text-white transition-colors">{friend.name}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Click to chat</p>
                 </div>
               </div>
 

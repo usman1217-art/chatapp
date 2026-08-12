@@ -130,12 +130,12 @@ function MessageList({ socket, setMessages }) {
 
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col justify-center items-center bg-slate-50/50 dark:bg-[#0a192f]/50 backdrop-blur-sm gap-4 transition-colors duration-300">
-        <div className="relative w-14 h-14">
-          <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20 animate-pulse shadow-lg"></div>
-          <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 animate-spin"></div>
+      <div className="flex-1 flex flex-col justify-center items-center bg-transparent gap-4">
+        <div className="relative w-12 h-12 mb-4">
+          <div className="absolute inset-0 rounded-full border-4 border-white/30 animate-pulse shadow-[0_0_15px_rgba(255,255,255,0.5)]"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-t-white animate-spin"></div>
         </div>
-        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 tracking-widest uppercase animate-pulse">
+        <span className="text-xs font-bold text-white tracking-widest uppercase animate-pulse text-glow">
           Syncing conversation...
         </span>
       </div>
@@ -143,7 +143,7 @@ function MessageList({ socket, setMessages }) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-2 bg-slate-50/40 dark:bg-[#0a192f]/40 backdrop-blur-sm transition-colors duration-300 scrollbar-thin scrollbar-thumb-slate-300/80 dark:scrollbar-thumb-slate-700/80">
+    <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-2 bg-transparent scrollbar-thin scrollbar-thumb-white/20">
       
       {/* --- ✅ NEW: DYNAMIC GAME ROUTER OVERLAY --- */}
       {activeGame && (

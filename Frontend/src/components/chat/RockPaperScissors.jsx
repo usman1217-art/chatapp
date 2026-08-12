@@ -31,7 +31,7 @@ function RockPaperScissors({ activeGame, setActiveGame, socket }) {
   const emojiMap = { rock: "✊", paper: "✋", scissors: "✌️" };
 
   return (
-    <div className="bg-white/90 dark:bg-[#0a192f]/95 backdrop-blur-xl border border-slate-200 dark:border-slate-700/60 p-6 rounded-3xl shadow-2xl max-w-[280px] w-full text-center transition-all duration-500 animate-[fade-in_0.3s_ease-out]">
+    <div className="bg-white/90 dark:bg-black/95 backdrop-blur-xl border border-slate-200 dark:border-slate-700/60 p-6 rounded-3xl shadow-2xl max-w-[280px] w-full text-center transition-all duration-500 animate-[fade-in_0.3s_ease-out]">
       
       {/* Header */}
       <div className="flex justify-between items-center mb-5">

@@ -61,7 +61,7 @@ function FriendRequestsTab() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300">
+    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-transparent transition-colors duration-300">
       <h3 className="text-slate-800 dark:text-slate-100 font-bold text-sm mb-2">Pending Requests</h3>
       
       {/* ✅ Premium Skeleton Loader tracking FriendTab / ChatList structure */}
@@ -102,20 +102,20 @@ function FriendRequestsTab() {
             >
               <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
                 <img
-                  src={reqUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reqUser.name)}&background=4f46e5&color=fff`}
+                  src={reqUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reqUser.name)}`}
                   alt={reqUser.name}
                   className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700"
                 />
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-slate-900 dark:text-slate-100 font-semibold text-sm truncate">{reqUser.name}</h4>
-                  <p className="text-xs text-indigo-600 dark:text-indigo-400 font-mono truncate">{reqUser.userId}</p>
-                </div>
+                <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 truncate">{reqUser.name}</h3>
+                <p className="text-xs text-slate-800 dark:text-slate-300 font-mono truncate">{reqUser.userId}</p>
+              </div>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => handleAccept(reqUser._id)}
-                  className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-all cursor-pointer shadow-sm active:scale-95"
+                  className="px-2.5 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 text-xs font-semibold rounded-lg transition-all cursor-pointer shadow-sm active:scale-95"
                 >
                   Accept
                 </button>

@@ -119,7 +119,7 @@ function UserSearch({ close }) {
   };
 
   return (
-    <div className="absolute inset-0 z-20 bg-white/95 dark:bg-[#0a192f]/95 backdrop-blur-md flex flex-col transition-colors duration-300">
+    <div className="absolute inset-0 z-20 bg-white/95 dark:bg-black/95 backdrop-blur-md flex flex-col transition-colors duration-300">
       
       {/* Custom Notification Toast */}
       {statusMessage.text && (
@@ -150,16 +150,16 @@ function UserSearch({ close }) {
         <form onSubmit={handleSearch} className="flex gap-2">
           <input
             type="text"
-            placeholder="User ID (e.g. CHAT-XXXXXX)"
             value={searchId}
             onChange={(e) => setSearchId(e.target.value)}
-            className="flex-1 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-indigo-400 dark:focus:border-indigo-500 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder-slate-400 uppercase"
+            placeholder="ENTER USER ID"
+            className="flex-1 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-slate-800 dark:focus:border-white text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-500/20 transition-all placeholder-slate-400 uppercase"
             autoFocus
           />
           <button 
             type="submit" 
             disabled={loading || !searchId.trim()} 
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium shadow-sm cursor-pointer"
+            className="px-4 py-2 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-white dark:text-slate-900 rounded-lg transition-colors font-medium shadow-sm cursor-pointer"
           >
             {loading ? "..." : "Find"}
           </button>
@@ -172,7 +172,7 @@ function UserSearch({ close }) {
           <div className="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
             
             <img
-              src={result.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(result.name)}&background=4f46e5&color=fff&size=256`}
+              src={result.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(result.name)}&size=256`}
               alt={result.name}
               className="w-12 h-12 rounded-full object-cover border border-slate-100 dark:border-slate-600"
             />
@@ -181,7 +181,7 @@ function UserSearch({ close }) {
               <h4 className="font-bold text-slate-800 dark:text-slate-100 truncate">
                 {result.name}
               </h4>
-              <p className="text-xs text-indigo-500 dark:text-indigo-400 font-mono mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
                 {result.userId}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
@@ -198,7 +198,7 @@ function UserSearch({ close }) {
                 <button 
                   onClick={handleSendFriendRequest}
                   disabled={isSendingRequest}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+                  className="px-3 py-1.5 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 text-white dark:text-slate-900 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   {isSendingRequest ? "Sending..." : "Add Friend"}
                 </button>
@@ -207,12 +207,12 @@ function UserSearch({ close }) {
               <button 
                 onClick={handleStartChat}
                 disabled={isStartingChat}
-                className="p-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full transition-colors disabled:opacity-50 disabled:cursor-wait cursor-pointer"
+                className="p-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 text-slate-900 dark:text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-wait cursor-pointer"
               >
                 {isStartingChat ? (
-                  <div className="w-5 h-5 border-2 border-indigo-600 dark:border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-5 h-5 border-2 border-slate-900 dark:border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
                     <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
                   </svg>

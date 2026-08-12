@@ -65,8 +65,9 @@ export const AuthProvider = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-[#0a192f] transition-colors duration-300">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-transparent transition-colors duration-300 gap-5">
+        <img src="/image.png" alt="Loading..." className="w-24 h-32 object-cover rounded-xl animate-[pulse_1.5s_ease-in-out_infinite] drop-shadow-[0_0_20px_rgba(255,255,255,0.2)] dark:drop-shadow-[0_0_20px_rgba(220,38,38,0.5)]" />
+        <p className="text-slate-900 dark:text-slate-400 font-bold tracking-widest text-xs uppercase animate-pulse">Connecting...</p>
       </div>
     );
   }

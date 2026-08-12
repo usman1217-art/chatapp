@@ -29,7 +29,7 @@ function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-slate-50 dark:bg-[#0a192f] transition-colors duration-500 font-sans antialiased">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-transparent transition-colors duration-500 font-sans antialiased">
       <div className="w-full max-w-[420px] animate-slide-up">
         <AuthCard title="Reset password" subtitle="Choose a new password for your account">
           <form onSubmit={submit} className="space-y-4">
@@ -41,7 +41,7 @@ function ResetPassword() {
             </div>
             
             <p className="text-center text-sm font-medium text-slate-500 dark:text-slate-400 pt-2">
-              <Link to="/login" className="text-indigo-600 dark:text-indigo-400 font-bold hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors duration-200 hover:underline">Back to login</Link>
+              <Link to="/login" className="text-slate-900 dark:text-white font-bold hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200 hover:underline">Back to login</Link>
             </p>
           </form>
         </AuthCard>

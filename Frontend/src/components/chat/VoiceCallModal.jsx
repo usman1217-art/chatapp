@@ -163,17 +163,17 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
     }
   };
 
-  const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverName)}&background=4f46e5&color=fff`;
+  const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverName)}`;
   const displayAvatar = (!imgError && receiverAvatar) ? receiverAvatar : fallbackAvatar;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/60 dark:bg-black/75 backdrop-blur-md p-4 animate-fade-in">
       <audio ref={remoteAudioRef} autoPlay playsInline />
 
-      <div className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl w-full max-w-[320px] rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] border border-white/50 dark:border-slate-700/50 flex flex-col items-center p-8 text-center animate-scale-up">
+      <div className="bg-white/85 dark:bg-[#050505]/85 backdrop-blur-2xl w-full max-w-[320px] rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] border border-white/50 dark:border-slate-700/50 flex flex-col items-center p-8 text-center animate-scale-up">
         
         <div className="relative mb-6">
-          <div className="absolute -inset-2 rounded-full border-2 border-indigo-500/40 animate-ping"></div>
+          <div className="absolute -inset-2 rounded-full border-2 border-slate-900/40 dark:border-white/40 animate-ping"></div>
           <img
             src={displayAvatar}
             alt={receiverName}
@@ -185,7 +185,7 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
         <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 mb-1 truncate max-w-full">
           {receiverName}
         </h3>
-        <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-8">
+        <p className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-widest mb-8">
           {callStatus}
         </p>
 

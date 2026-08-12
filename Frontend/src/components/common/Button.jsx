@@ -9,9 +9,9 @@ function Button({
 }) {
   const variants = {
     primary:
-      "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-600/20",
+      "glass-button",
     secondary:
-      "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700",
+      "glass-panel hover:bg-white/10 text-slate-200 border-white/20",
   };
 
   return (
