@@ -59,7 +59,7 @@ function MessageBubble({ message }) {
     
     longPressTimer.current = setTimeout(() => {
       handleLongPress();
-    }, 1500);
+    }, 1000);
   };
 
   const handleTouchMove = (e) => {
@@ -87,7 +87,7 @@ function MessageBubble({ message }) {
     if (message.deletedForEveryone) return;
     longPressTimer.current = setTimeout(() => {
       handleLongPress();
-    }, 1500);
+    }, 1000);
   };
 
   const handleMouseUp = () => clearTimeout(longPressTimer.current);

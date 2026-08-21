@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
 
 function ChatHeader({ onStartCall }) {
-  const { selectedChat, setSelectedChat, setChats, messages, setMessages, selectedMessages, setSelectedMessages } = useChat();
+  const { selectedChat, setSelectedChat, setChats, messages, setMessages, selectedMessages, setSelectedMessages, setViewingProfile } = useChat();
   const { user } = useAuth();
   const { onlineUsers, isTyping, socket } = useSocket();
   
@@ -174,7 +174,10 @@ function ChatHeader({ onStartCall }) {
           </svg>
         </button>
 
-        <div className="relative shrink-0">
+        <div 
+          onClick={() => setViewingProfile(prev => !prev)}
+          className="relative shrink-0 cursor-pointer"
+        >
           <img
             src={
               otherUser?.avatar ||
@@ -191,7 +194,10 @@ function ChatHeader({ onStartCall }) {
           )}
         </div>
 
-        <div className="flex flex-col justify-center min-w-0 flex-1">
+        <div 
+          onClick={() => setViewingProfile(prev => !prev)}
+          className="flex flex-col justify-center min-w-0 flex-1 cursor-pointer"
+        >
           <h2 className="font-bold text-base md:text-lg text-slate-900 dark:text-slate-100 leading-tight truncate text-glow">
             {otherUser?.name || "User"}
           </h2>

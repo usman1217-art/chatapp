@@ -103,10 +103,7 @@ function ChatWindow() {
       <div className="flex flex-col flex-1 overflow-hidden relative glass-panel md:my-4 md:mr-4 md:rounded-3xl shadow-2xl">
         
         {/* --- HEADER LAYER (Passes onStartCall to trigger modal) --- */}
-        <div
-          onClick={() => setViewingProfile(!viewingProfile)}
-          className="cursor-pointer max-md:absolute max-md:top-0 max-md:left-0 max-md:right-0 sticky top-0 z-30 shrink-0"
-        >
+        <div className="max-md:absolute max-md:top-0 max-md:left-0 max-md:right-0 sticky top-0 z-30 shrink-0">
           <ChatHeader onStartCall={() => setActiveCall({ isCaller: true })} />
         </div>
 
