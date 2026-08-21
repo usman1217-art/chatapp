@@ -52,6 +52,10 @@ function Profile() {
   const [editForm, setEditForm] = useState({ name: "", about: "" });
   const [isSaving, setIsSaving] = useState(false);
   
+  // --- PASSWORD STATE ---
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "" });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  
   const [confirmModal, setConfirmModal] = useState({ show: false, message: "", onConfirm: null });
   const [statusMessage, setStatusMessage] = useState("");
 
@@ -223,18 +227,52 @@ function Profile() {
     }
   };
 
-  // 🔴 FIX: Proper logout execution
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setIsChangingPassword(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      
+      const payload = { newPassword: passwordForm.newPassword };
+      if (user.hasPassword) {
+        payload.currentPassword = passwordForm.currentPassword;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/change-password`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        triggerToast("Password updated successfully!");
+        setPasswordForm({ currentPassword: "", newPassword: "" });
+        // Update local user state to reflect they now have a password
+        setUser((prev) => ({ ...prev, hasPassword: true }));
+      } else {
+        triggerToast(data.message || "Failed to update password");
+      }
+    } catch (error) {
+      console.error("Error updating password:", error);
+      triggerToast("An error occurred.");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   const handleLogout = () => {
     setConfirmModal({
       show: true,
       message: "Are you sure you want to sign out?",
       onConfirm: async () => {
         try {
-          // 1. Call the backend to destroy the secure HTTP-Only cookie
           if (logout) {
             await logout();
           } else {
-            // Fallback clear just in case logout fails
             localStorage.removeItem("accessToken");
             localStorage.removeItem("token");
             if (setGlobalUser) setGlobalUser(null);
@@ -242,9 +280,43 @@ function Profile() {
         } catch (error) {
           console.error("Logout failed", error);
         } finally {
-          // 2. Redirect to login page
           setConfirmModal({ show: false, message: "", onConfirm: null });
           navigate("/login", { replace: true });
+        }
+      }
+    });
+  };
+
+  const handleDeleteAccount = () => {
+    setConfirmModal({
+      show: true,
+      message: "Are you absolutely sure? This action will permanently delete your account and cannot be undone.",
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem("accessToken");
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/users/profile`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          if (response.ok) {
+            if (logout) {
+              await logout();
+            } else {
+              localStorage.removeItem("accessToken");
+              localStorage.removeItem("token");
+              if (setGlobalUser) setGlobalUser(null);
+            }
+            setConfirmModal({ show: false, message: "", onConfirm: null });
+            navigate("/register", { replace: true });
+          } else {
+            const data = await response.json();
+            triggerToast(data.message || "Failed to delete account");
+            setConfirmModal({ show: false, message: "", onConfirm: null });
+          }
+        } catch (error) {
+          console.error("Delete account failed", error);
+          setConfirmModal({ show: false, message: "", onConfirm: null });
         }
       }
     });
@@ -530,17 +602,86 @@ function Profile() {
               </div>
             </div>
 
+            <hr className="border-slate-200 dark:border-slate-800 my-8" />
+            
+            {/* Security Section */}
+            <div>
+              <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 mb-4 tracking-tight">Security</h3>
+              <form onSubmit={handlePasswordSubmit} className="space-y-4 bg-slate-100/50 dark:bg-black/20 p-5 rounded-2xl border border-slate-200 dark:border-white/5">
+                {!user.hasPassword && (
+                  <div className="mb-2 text-sm text-amber-600 dark:text-amber-400 font-medium">
+                    You signed in with Google. Set a password here if you'd like to sign in with email and password in the future.
+                  </div>
+                )}
+                
+                {user.hasPassword && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium focus:border-slate-800 dark:focus:border-slate-300 focus:outline-none transition-all"
+                      placeholder="Enter current password"
+                    />
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-medium focus:border-slate-800 dark:focus:border-slate-300 focus:outline-none transition-all"
+                    placeholder="At least 6 characters"
+                  />
+                </div>
+                
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isChangingPassword || !passwordForm.newPassword || (user.hasPassword && !passwordForm.currentPassword)}
+                    className="px-5 py-2.5 text-sm font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 rounded-xl shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    {isChangingPassword ? "Saving..." : (user.hasPassword ? "Change Password" : "Set Password")}
+                  </button>
+                </div>
+              </form>
+            </div>
+
             <hr className="border-slate-200 dark:border-slate-800 my-6" />
             
             <button
               onClick={handleLogout}
-              className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-500/10 dark:hover:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-800/30 shadow-sm"
+              className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm mb-6"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
               Sign Out
             </button>
+
+            {/* Danger Zone */}
+            <div className="pt-2 border-t border-red-200 dark:border-red-900/30">
+              <h3 className="text-sm font-bold text-red-600 dark:text-red-500 mb-3 uppercase tracking-wider">Danger Zone</h3>
+              <button
+                onClick={handleDeleteAccount}
+                className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-500/10 dark:hover:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-800/30 shadow-sm"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete Account
+              </button>
+            </div>
 
           </div>
         </div>

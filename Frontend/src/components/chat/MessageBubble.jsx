@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
 import { useSocket } from "../../context/SocketContext";
+import { FaFileAlt, FaDownload, FaRegSmile } from "react-icons/fa";
+import EmojiPicker from "emoji-picker-react";
 
 function MessageBubble({ message }) {
   const { user } = useAuth();
@@ -11,7 +13,9 @@ function MessageBubble({ message }) {
   
   const [isHovered, setIsHovered] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const menuRef = useRef(null);
+  const emojiPickerRef = useRef(null);
 
   const [swipeX, setSwipeX] = useState(0);
   const touchStartX = useRef(0);
@@ -27,6 +31,9 @@ function MessageBubble({ message }) {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setShowMenu(false);
+      }
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) {
+        setShowEmojiPicker(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -94,7 +101,7 @@ function MessageBubble({ message }) {
         setMessages((prev) =>
           prev.map((m) =>
             m._id === message._id
-              ? { ...m, text: "This message was deleted", image: null, deletedForEveryone: true }
+              ? { ...m, text: "This message was deleted", image: null, fileUrl: null, deletedForEveryone: true }
               : m
           )
         );
@@ -111,6 +118,40 @@ function MessageBubble({ message }) {
       }
     } catch (err) {
       console.error("Error deleting for everyone:", err);
+    }
+  };
+
+  const handleReact = async (emoji) => {
+    setShowEmojiPicker(false);
+    try {
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/messages/${message._id}/react`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ emoji }),
+      });
+
+      if (res.ok) {
+        const updatedMessage = await res.json();
+        setMessages((prev) =>
+          prev.map((m) => (m._id === message._id ? updatedMessage : m))
+        );
+
+        if (socket && selectedChat) {
+          const receiver = selectedChat.participants.find(p => (p._id || p) !== user._id);
+          if (receiver) {
+            socket.emit("reactionAdded", { 
+              message: updatedMessage,
+              receiverId: receiver._id || receiver 
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error reacting to message:", err);
     }
   };
 
@@ -155,29 +196,60 @@ function MessageBubble({ message }) {
         }`}
       >
         {!message.deletedForEveryone && (isHovered || showMenu) && (
-          <div className="absolute top-2 right-2 z-30 flex items-center gap-1 bg-black/10 dark:bg-black/30 backdrop-blur-md rounded-full p-0.5">
-            <button 
-              onClick={() => setReplyingTo(message)}
-              className="hidden md:block p-1 rounded-full transition-colors cursor-pointer text-white hover:bg-white/20"
-              title="Reply"
-            >
-              <svg className="w-3.5 h-3.5 drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-              </svg>
-            </button>
+          <div className="absolute top-2 right-2 z-30 flex items-center gap-1">
+            <div className="flex items-center gap-1 bg-black/30 dark:bg-black/60 backdrop-blur-md rounded-full p-1 shadow-lg">
+              {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
+                <button
+                  key={emoji}
+                  onClick={() => handleReact(emoji)}
+                  className="p-1 rounded-full hover:bg-white/20 transition-all text-sm cursor-pointer hover:scale-125"
+                >
+                  {emoji}
+                </button>
+              ))}
+              <div className="w-px h-4 bg-white/20 mx-1"></div>
+              <div className="relative" ref={emojiPickerRef}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(!showEmojiPicker); }}
+                  className="p-1.5 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer"
+                >
+                  <FaRegSmile className="w-3.5 h-3.5" />
+                </button>
+                {showEmojiPicker && (
+                  <div className="absolute top-full right-0 mt-2 z-50 shadow-2xl rounded-2xl overflow-hidden animate-slide-up">
+                    <EmojiPicker
+                      onEmojiClick={(e) => handleReact(e.emoji)}
+                      theme={document.documentElement.classList.contains("dark") ? "dark" : "light"}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMenu(true);
-              }}
-              className="p-1 rounded-full transition-colors cursor-pointer text-white hover:bg-white/20"
-              title="Message options"
-            >
-              <svg className="w-4 h-4 pointer-events-none drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-1 bg-black/10 dark:bg-black/30 backdrop-blur-md rounded-full p-0.5 ml-1">
+              <button 
+                onClick={() => setReplyingTo(message)}
+                className="hidden md:block p-1.5 rounded-full transition-colors cursor-pointer text-white hover:bg-white/20"
+                title="Reply"
+              >
+                <svg className="w-3.5 h-3.5 drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                </svg>
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(true);
+                }}
+                className="p-1.5 rounded-full transition-colors cursor-pointer text-white hover:bg-white/20"
+                title="Message options"
+              >
+                <svg className="w-4 h-4 pointer-events-none drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                </svg>
+              </button>
+            </div>
           </div>
         )}
 
@@ -199,6 +271,27 @@ function MessageBubble({ message }) {
             onClick={() => setActiveLightboxImage(message.image)}
             className="rounded-xl mb-2 max-w-full h-auto max-h-56 object-cover shadow-sm cursor-zoom-in hover:scale-[1.01] transition-transform duration-200 border-2 border-white/20"
           />
+        )}
+
+        {message.fileUrl && !message.deletedForEveryone && (
+          <a
+            href={message.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`flex items-center gap-3 p-3 rounded-xl mb-2 transition-colors cursor-pointer border ${
+              own 
+                ? "bg-white/10 hover:bg-white/20 border-white/20 text-white" 
+                : "bg-slate-200/50 hover:bg-slate-300/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+            }`}
+          >
+            <div className={`p-2 rounded-lg ${own ? "bg-white/20" : "bg-slate-300 dark:bg-slate-700"}`}>
+              <FaFileAlt className="w-5 h-5" />
+            </div>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-sm font-bold truncate">{message.fileName || "Attachment"}</span>
+            </div>
+            <FaDownload className="w-4 h-4 opacity-70" />
+          </a>
         )}
 
         <p className={`leading-relaxed whitespace-pre-wrap break-words text-sm md:text-base font-medium ${
@@ -249,6 +342,28 @@ function MessageBubble({ message }) {
             </div>
           )}
         </div>
+        
+        {/* REACTION BADGES */}
+        {message.reactions && message.reactions.length > 0 && !message.deletedForEveryone && (
+          <div className={`absolute -bottom-3 flex flex-wrap gap-1 z-20 ${own ? 'right-2' : 'left-2'}`}>
+            {Object.entries(
+              message.reactions.reduce((acc, r) => {
+                acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+                return acc;
+              }, {})
+            ).map(([emoji, count]) => (
+              <div 
+                key={emoji}
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-[11px] font-bold px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-1 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                onClick={() => handleReact(emoji)}
+              >
+                <span>{emoji}</span>
+                {count > 1 && <span>{count}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+
       </div>
 
       {showMenu && createPortal(

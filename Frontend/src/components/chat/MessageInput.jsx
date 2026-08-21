@@ -3,12 +3,16 @@ import { sendMessage } from "../../services/chatApi";
 import { useChat } from "../../context/ChatContext";
 import { useSocket } from "../../context/SocketContext";
 import { useAuth } from "../../context/AuthContext";
+import EmojiPicker from "emoji-picker-react";
+import { FaPaperclip, FaRegSmile, FaFileAlt } from "react-icons/fa";
 
 function MessageInput() {
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [filePreview, setFilePreview] = useState(null); // For non-images
   const [isCompressing, setIsCompressing] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const typingTimeout = useRef(null);
   const fileInputRef = useRef(null);
@@ -86,26 +90,34 @@ function MessageInput() {
     });
   };
 
-  const handleImageChange = async (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      setIsCompressing(true);
-      const optimizedImg = await compressImage(file);
-      setImage(optimizedImg);
-      setImagePreview(URL.createObjectURL(optimizedImg));
+      if (file.type.startsWith("image/")) {
+        setIsCompressing(true);
+        const optimizedImg = await compressImage(file);
+        setImage(optimizedImg);
+        setImagePreview(URL.createObjectURL(optimizedImg));
+        setFilePreview(null);
+        setIsCompressing(false);
+      } else {
+        // Generic file
+        setImage(file);
+        setImagePreview(null);
+        setFilePreview({ name: file.name, size: (file.size / 1024 / 1024).toFixed(2) + " MB" });
+      }
       
-      // Auto-focus the input after attaching an image
+      setShowEmojiPicker(false);
       setTimeout(() => {
         if (textInputRef.current) textInputRef.current.focus();
       }, 0);
-      
-      setIsCompressing(false);
     }
   };
 
-  const clearImage = () => {
+  const clearFile = () => {
     setImage(null);
     setImagePreview(null);
+    setFilePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (textInputRef.current) textInputRef.current.focus();
   };
@@ -123,6 +135,8 @@ function MessageInput() {
       sender: user,
       text: currentText,
       image: imagePreview,
+      fileUrl: filePreview ? "temp-file" : "",
+      fileName: filePreview ? filePreview.name : "",
       replyTo: currentReply,
       createdAt: new Date().toISOString(),
     };
@@ -131,8 +145,9 @@ function MessageInput() {
     
     // Clear inputs and instantly grab the cursor back to keep mobile keyboards open
     setText("");
-    clearImage();
+    clearFile();
     setReplyingTo(null);
+    setShowEmojiPicker(false);
 
     setTimeout(() => {
       if (textInputRef.current) {
@@ -189,16 +204,29 @@ function MessageInput() {
         </div>
       )}
 
+      {/* Emoji Picker Overlay */}
+      {showEmojiPicker && (
+        <div className="absolute bottom-full left-0 mb-2 z-50 animate-slide-up shadow-2xl rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
+          <EmojiPicker 
+            onEmojiClick={(e) => {
+              setText(prev => prev + e.emoji);
+              if (textInputRef.current) textInputRef.current.focus();
+            }} 
+            theme={document.documentElement.classList.contains("dark") ? "dark" : "light"}
+          />
+        </div>
+      )}
+
       {/* Tiny Image Preview Thumbnail */}
       {imagePreview && (
-        <div className="relative self-start mb-1 ml-12 animate-slide-up">
+        <div className="relative self-start mb-1 ml-2 animate-slide-up">
           <img 
             src={imagePreview} 
             alt="Upload Preview" 
             className="h-20 w-auto rounded-lg object-cover border-2 border-slate-200 dark:border-slate-700 shadow-sm" 
           />
           <button 
-            onClick={clearImage}
+            onClick={clearFile}
             className="absolute -top-2.5 -right-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full w-6 h-6 flex items-center justify-center hover:bg-slate-800 dark:hover:bg-slate-200 shadow-md transition-all border-2 border-white dark:border-[#0a192f]"
             title="Remove image"
           >
@@ -206,27 +234,53 @@ function MessageInput() {
           </button>
         </div>
       )}
+      
+      {/* File Preview */}
+      {filePreview && (
+        <div className="relative self-start mb-1 ml-2 animate-slide-up bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm max-w-xs">
+          <FaFileAlt className="w-8 h-8 text-slate-500 flex-shrink-0" />
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">{filePreview.name}</span>
+            <span className="text-xs font-semibold text-slate-500">{filePreview.size}</span>
+          </div>
+          <button 
+            onClick={clearFile}
+            className="absolute -top-2.5 -right-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full w-6 h-6 flex items-center justify-center hover:bg-slate-800 dark:hover:bg-slate-200 shadow-md transition-all border-2 border-white dark:border-[#0a192f] shrink-0"
+            title="Remove file"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 relative">
+        
+        {/* Emoji Toggle Button */}
+        <button
+          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          className={`w-12 h-12 rounded-full transition-all shrink-0 flex items-center justify-center shadow-sm border ${showEmojiPicker ? "bg-amber-500 border-amber-500 text-white" : "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"}`}
+          title="Emoji"
+        >
+          <FaRegSmile className="w-5 h-5 sm:w-6 sm:h-6" />
+        </button>
+
         {/* Hidden File Input */}
         <input
           type="file"
           ref={fileInputRef}
-          onChange={handleImageChange}
+          onChange={handleFileChange}
           className="hidden"
-          accept="image/*"
+          accept="*/*"
         />
 
-        {/* Custom Image Upload Icon Button */}
+        {/* File Attachment Button */}
         <button
           disabled={isCompressing}
           onClick={() => fileInputRef.current.click()}
           className="w-12 h-12 text-slate-500 hover:text-slate-900 hover:bg-slate-200 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 rounded-full transition-all shrink-0 flex items-center justify-center border border-slate-200 dark:border-white/10 shadow-sm disabled:opacity-40 cursor-pointer"
-          title="Attach Image"
+          title="Attach File"
         >
-          <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+          <FaPaperclip className="w-5 h-5 sm:w-5 sm:h-5" />
         </button>
 
         {/* Text Input */}

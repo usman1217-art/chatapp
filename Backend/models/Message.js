@@ -24,6 +24,16 @@ const messageSchema = new mongoose.Schema(
       default: "",
     },
 
+    fileUrl: {
+      type: String,
+      default: "",
+    },
+
+    fileName: {
+      type: String,
+      default: "",
+    },
+
     read: {
       type: Boolean,
       default: false,
@@ -33,6 +43,19 @@ const messageSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    reactions: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        emoji: {
+          type: String,
+          required: true,
+        },
+      }
+    ],
 
     // --- ADD THIS TO LINK REPLIES PERMANENTLY ---
     replyTo: {

@@ -91,14 +91,24 @@ function MessageList({ socket, setMessages }) {
       }
     };
 
+    const handleReactionUpdated = (updatedMessage) => {
+      if (selectedChat?._id === updatedMessage.chat) {
+        setMessages((prev) => 
+          prev.map((m) => m._id === updatedMessage._id ? updatedMessage : m)
+        );
+      }
+    };
+
     socket.on("messagesRead", handleMessagesRead);
     socket.on("game-updated", handleGameUpdated); 
     socket.on("game-cancelled", handleGameCancelled); 
+    socket.on("reactionUpdated", handleReactionUpdated);
 
     return () => {
       socket.off("messagesRead", handleMessagesRead);
       socket.off("game-updated", handleGameUpdated);
       socket.off("game-cancelled", handleGameCancelled); 
+      socket.off("reactionUpdated", handleReactionUpdated);
     };
   }, [socket, setMessages, selectedChat, user?._id]);
 

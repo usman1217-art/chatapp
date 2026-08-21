@@ -10,6 +10,7 @@ const {
   markAsRead,
   deleteForEveryone,
   deleteForMe,
+  reactToMessage,
 } = require("../controllers/messageController");
 
 router.post(
@@ -30,5 +31,7 @@ router.patch(
   auth,
   deleteForEveryone
 );
+
+router.post("/:messageId/react", auth, reactToMessage);
 
 module.exports = router;

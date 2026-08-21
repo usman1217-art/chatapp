@@ -1,5 +1,5 @@
 /* Import a premium geometric font from Google */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* Initialize Tailwind v4 */
 @import "tailwindcss";
@@ -9,7 +9,7 @@
 
 @theme {
   /* Override the default sans font with our new premium one */
-  --font-sans: "Outfit", system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   
   /* Redefine Tailwind's slate scale for multi-theme support */
   --color-slate-50: var(--theme-50);

@@ -130,6 +130,17 @@ const socketHandler = (io) => {
       }
     });
 
+    // Reaction Action
+    socket.on("reactionAdded", (data) => {
+      const receiverIdStr = data.receiverId?.toString();
+      const receiverSockets = onlineUsers.get(receiverIdStr);
+      if (receiverSockets) {
+        receiverSockets.forEach((socketId) => {
+          io.to(socketId).emit("reactionUpdated", data.message);
+        });
+      }
+    });
+
     // WebRTC Voice Routing Events
     socket.on("call-user", ({ userToCall, signalData, from, name, avatar }) => {
       const targetSockets = onlineUsers.get(userToCall?.toString());

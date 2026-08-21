@@ -10,7 +10,7 @@ import { useEffect, useState } from "react"; // <-- Import useState
 
 function ChatWindow() {
   const { user } = useAuth();
-  const { socket } = useSocket();
+  const { socket, onlineUsers } = useSocket();
   const {
     selectedChat,
     setSelectedChat,
@@ -72,10 +72,10 @@ function ChatWindow() {
   }
 
   const otherUser = selectedChat.participants?.find(
-    (participant) => (participant._id || participant) !== (user?._id || user)
+    (participant) => participant && (participant._id || participant) !== (user?._id || user)
   );
 
-  const displayAvatar = otherUser?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser?.name || "U")}`;
+  const displayAvatar = otherUser?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser?.name || "Deleted User")}`;
 
   const handleDownloadImage = async (e, imageUrl) => {
     e.stopPropagation();
@@ -136,16 +136,24 @@ function ChatWindow() {
           </div>
 
           <div className="flex flex-col items-center text-center gap-4">
-            <img 
-              src={displayAvatar} 
-              alt="Avatar" 
-              onClick={() => setActiveLightboxImage(displayAvatar)}
-              className="w-24 h-24 rounded-full object-cover border-4 border-white/20 shadow-[0_0_15px_rgba(168,85,247,0.4)] bg-white/5 cursor-pointer hover:scale-105 transition-transform duration-200"
-              title="View full picture"
-            />
-            <div className="mt-4 pb-2 border-b border-white/10">
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-black">User ID</p>
-              <p className="text-xs text-slate-300 font-medium mt-1 select-all truncate tracking-wide bg-white/10 py-1 px-2 rounded-md border border-white/30">{otherUser?.userId || "ID Hidden"}</p>
+            <div className="relative">
+              <img 
+                src={displayAvatar} 
+                alt="Avatar" 
+                onClick={() => setActiveLightboxImage(displayAvatar)}
+                className="w-24 h-24 rounded-full object-cover border-4 border-white/20 shadow-[0_0_15px_rgba(168,85,247,0.4)] bg-white/5 cursor-pointer hover:scale-105 transition-transform duration-200"
+                title="View full picture"
+              />
+              <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-[#1a1f2e] dark:border-black rounded-full shadow-sm ${onlineUsers.includes(otherUser?._id) ? "bg-emerald-400" : "bg-slate-400 dark:bg-slate-500"}`}></div>
+            </div>
+            <div>
+              <h2 className="font-bold text-lg text-slate-100 drop-shadow-md">
+                {otherUser?.name || "Deleted User"}
+              </h2>
+              <p className="text-sm font-medium text-slate-300 dark:text-slate-400 flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${onlineUsers.includes(otherUser?._id) ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" : "bg-slate-400"}`}></span>
+                {onlineUsers.includes(otherUser?._id) ? "Online now" : "Offline"}
+              </p>
             </div>
           </div>
 

@@ -1,5 +1,6 @@
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
+import { FaRegHandRock, FaRegHandPaper, FaRegHandScissors, FaTrophy, FaTimes, FaQuestion, FaLock, FaHandshake } from "react-icons/fa";
 
 function RockPaperScissors({ activeGame, setActiveGame, socket }) {
   const { user } = useAuth();
@@ -28,7 +29,11 @@ function RockPaperScissors({ activeGame, setActiveGame, socket }) {
     socket.emit("cancel-game", { gameId }); 
   };
 
-  const emojiMap = { rock: "✊", paper: "✋", scissors: "✌️" };
+  const iconMap = { 
+    rock: <FaRegHandRock className="w-8 h-8" />, 
+    paper: <FaRegHandPaper className="w-8 h-8" />, 
+    scissors: <FaRegHandScissors className="w-8 h-8" /> 
+  };
 
   return (
     <div className="bg-white/90 dark:bg-black/95 backdrop-blur-xl border border-slate-200 dark:border-slate-700/60 p-6 rounded-3xl shadow-2xl max-w-[280px] w-full text-center transition-all duration-500 animate-[fade-in_0.3s_ease-out]">
@@ -36,7 +41,7 @@ function RockPaperScissors({ activeGame, setActiveGame, socket }) {
       {/* Header */}
       <div className="flex justify-between items-center mb-5">
         <h4 className="text-xs font-black uppercase tracking-widest text-amber-500 dark:text-amber-400 flex items-center gap-2">
-          <span className="animate-pulse">✊</span> RPS
+          <FaRegHandRock className="w-4 h-4 animate-pulse" /> RPS
         </h4>
         <button 
           onClick={handleCancelGame} 
@@ -58,13 +63,17 @@ function RockPaperScissors({ activeGame, setActiveGame, socket }) {
       }`}>
         {activeGame.status === "active" && (
           !myChoice 
-            ? <span>Make your move! 👇</span> 
+            ? <span>Make your move!</span> 
             : <span className="opacity-70 animate-pulse">Waiting for {opponent?.name?.split(' ')[0] || "Opponent"}...</span>
         )}
         {activeGame.status === "won" && (
-          activeGame.winner === currentUserId ? "🏆 Victory!" : "❌ Defeat!"
+          activeGame.winner === currentUserId 
+            ? <span className="flex items-center justify-center gap-1.5"><FaTrophy /> Victory!</span>
+            : <span className="flex items-center justify-center gap-1.5"><FaTimes /> Defeat!</span>
         )}
-        {activeGame.status === "draw" && "🤝 Match Drawn!"}
+        {activeGame.status === "draw" && (
+          <span className="flex items-center justify-center gap-1.5"><FaHandshake /> Match Drawn!</span>
+        )}
       </div>
 
       {/* The Arena / Choices */}
@@ -74,9 +83,9 @@ function RockPaperScissors({ activeGame, setActiveGame, socket }) {
             <button
               key={choice}
               onClick={() => handleChoice(choice)}
-              className="w-[60px] h-[60px] rounded-2xl text-2xl flex items-center justify-center bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 hover:bg-amber-500/10 hover:border-amber-500/50 transition-all active:scale-75 hover:scale-105 cursor-pointer shadow-sm"
+              className="w-[60px] h-[60px] rounded-2xl text-slate-700 dark:text-slate-200 flex items-center justify-center bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 hover:text-amber-500 hover:bg-amber-500/10 hover:border-amber-500/50 transition-all active:scale-75 hover:scale-105 cursor-pointer shadow-sm"
             >
-              {emojiMap[choice]}
+              {iconMap[choice]}
             </button>
           ))}
         </div>
@@ -85,8 +94,8 @@ function RockPaperScissors({ activeGame, setActiveGame, socket }) {
         <div className="flex justify-between items-center px-4 mb-4 mt-2">
           <div className="flex flex-col items-center">
             <span className="text-[10px] text-slate-400 font-bold mb-1">You</span>
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl border bg-slate-50 dark:bg-slate-800 shadow-inner ${activeGame.status !== "active" && activeGame.winner === currentUserId ? "border-emerald-500 bg-emerald-500/10" : "border-slate-200 dark:border-slate-700"}`}>
-              {myChoice ? emojiMap[myChoice] : "❓"}
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-slate-700 dark:text-slate-200 border bg-slate-50 dark:bg-slate-800 shadow-inner ${activeGame.status !== "active" && activeGame.winner === currentUserId ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "border-slate-200 dark:border-slate-700"}`}>
+              {myChoice ? iconMap[myChoice] : <FaQuestion className="w-6 h-6 opacity-40" />}
             </div>
           </div>
           
@@ -94,9 +103,9 @@ function RockPaperScissors({ activeGame, setActiveGame, socket }) {
           
           <div className="flex flex-col items-center">
             <span className="text-[10px] text-slate-400 font-bold mb-1">{opponent?.name?.split(' ')[0] || "Them"}</span>
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl border bg-slate-50 dark:bg-slate-800 shadow-inner ${activeGame.status !== "active" && activeGame.winner === (opponent?._id || opponent) ? "border-emerald-500 bg-emerald-500/10" : "border-slate-200 dark:border-slate-700"}`}>
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-slate-700 dark:text-slate-200 border bg-slate-50 dark:bg-slate-800 shadow-inner ${activeGame.status !== "active" && activeGame.winner === (opponent?._id || opponent) ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "border-slate-200 dark:border-slate-700"}`}>
               {/* Hide opponent choice until game is finished! */}
-              {activeGame.status === "active" ? (opponentChoice ? "🔒" : "❓") : emojiMap[opponentChoice]}
+              {activeGame.status === "active" ? (opponentChoice ? <FaLock className="w-5 h-5 text-amber-500" /> : <FaQuestion className="w-6 h-6 opacity-40" />) : iconMap[opponentChoice]}
             </div>
           </div>
         </div>
@@ -107,9 +116,9 @@ function RockPaperScissors({ activeGame, setActiveGame, socket }) {
         <div className="flex flex-col gap-2.5 pt-2">
           <button
             onClick={() => socket.emit("reset-game", { gameId })}
-            className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-3 rounded-xl transition-all shadow-[0_4px_14px_0_rgba(245,158,11,0.39)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.23)] active:scale-95 cursor-pointer"
+            className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-3 rounded-xl transition-all shadow-[0_4px_14px_0_rgba(245,158,11,0.39)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.23)] active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
-            🔄 Play Again
+            Play Again
           </button>
         </div>
       </div>

@@ -21,9 +21,8 @@ const {
   addFriend, 
   removeFriend,
   getFriendRequests,
-  acceptFriendRequest,
-  sendFriendRequest
-
+  sendFriendRequest,
+  deleteAccount
 } = require("../controllers/userController");
 
 // Friend Management Routes
@@ -58,6 +57,7 @@ router.delete("/friend-request/:senderId", auth, async (req, res) => {
 router.get("/search", auth, searchUsers);
 router.get("/profile", auth, getProfile);
 router.put("/profile", auth, updateProfile);
+router.delete("/profile", auth, deleteAccount);
 
 router.put(
     "/change-password",

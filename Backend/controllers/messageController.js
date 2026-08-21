@@ -15,13 +15,22 @@ const sendMessage = async (req, res) => {
     if (!chat) return res.status(404).json({ message: "Chat not found" });
 
     let imageUrl = "";
+    let fileUrl = "";
+    let fileName = "";
+    
     if (req.file) {
-      const uploadedImage = await imagekit.upload({
+      const uploadedFile = await imagekit.upload({
         file: req.file.buffer,
         fileName: Date.now() + "-" + req.file.originalname,
         folder: "/chat-app/messages",
       });
-      imageUrl = uploadedImage.url;
+      
+      if (req.file.mimetype.startsWith("image/")) {
+        imageUrl = uploadedFile.url;
+      } else {
+        fileUrl = uploadedFile.url;
+        fileName = req.file.originalname;
+      }
     }
 
     // Save with the reply reference attached
@@ -30,6 +39,8 @@ const sendMessage = async (req, res) => {
       sender: req.user.id,
       text: text || "",
       image: imageUrl,
+      fileUrl: fileUrl,
+      fileName: fileName,
       replyTo: replyToId || null, 
     });
 
@@ -185,10 +196,55 @@ const deleteForEveryone = async (req, res) => {
   }
 };
 
+const reactToMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { emoji } = req.body;
+    const userId = req.user.id;
+
+    if (!emoji) {
+      return res.status(400).json({ message: "Emoji is required" });
+    }
+
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    // Check if user already reacted with ANY emoji
+    const existingReactionIndex = message.reactions.findIndex(
+      (r) => r.user.toString() === userId
+    );
+
+    if (existingReactionIndex > -1) {
+      // If same emoji, remove it (toggle). If different, replace it.
+      if (message.reactions[existingReactionIndex].emoji === emoji) {
+        message.reactions.splice(existingReactionIndex, 1);
+      } else {
+        message.reactions[existingReactionIndex].emoji = emoji;
+      }
+    } else {
+      // Add new reaction
+      message.reactions.push({ user: userId, emoji });
+    }
+
+    await message.save();
+
+    const populatedMessage = await Message.findById(messageId)
+      .populate("sender", "name avatar")
+      .populate("replyTo", "text image fileUrl fileName sender");
+
+    res.json(populatedMessage);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   sendMessage,
   getMessages,
   markAsRead,
   deleteForEveryone,
   deleteForMe,
+  reactToMessage,
 };
