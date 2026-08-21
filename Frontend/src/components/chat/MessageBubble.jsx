@@ -227,7 +227,7 @@ function MessageBubble({ message }) {
           {own && !message.deletedForEveryone && (
             <div className="flex -ml-0.5">
               <svg 
-                className={`w-3.5 h-3.5 ${message.isRead ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`} 
+                className={`w-3.5 h-3.5 ${message.read ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`} 
                 fill="none" 
                 viewBox="0 0 24 24" 
                 stroke="currentColor" 
@@ -235,7 +235,7 @@ function MessageBubble({ message }) {
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
               </svg>
-              {message.isRead && (
+              {message.read && (
                 <svg 
                   className="w-3.5 h-3.5 text-emerald-400 -ml-2" 
                   fill="none" 

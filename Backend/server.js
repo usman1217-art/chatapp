@@ -11,7 +11,9 @@ const userRoutes = require("./routes/userRoutes");
 const connectDB = require("./config/db");
 
 const dns = require("dns")
-dns.setServers(["1.1.1.1","8.8.8.8"])
+if (process.env.NODE_ENV !== "production") {
+  dns.setServers(["1.1.1.1","8.8.8.8"])
+}
 const authRoutes = require("./routes/authRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const messageRoutes = require("./routes/messageRoutes");
@@ -86,7 +88,10 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: [
+            process.env.FRONTEND_URL,
+            "http://localhost:5173",
+        ],
     },
 });
 

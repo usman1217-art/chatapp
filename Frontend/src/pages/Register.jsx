@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import AuthCard from "../components/common/AuthCard";
+import GoogleAuthButton from "../components/common/GoogleAuthButton";
 import { registerUser } from "../services/authApi";
 
 import bgVideo from "../assets/login-bg.mp4"; 
@@ -117,6 +118,15 @@ function Register() {
               <div className="pt-2">
                 <Button type="submit" loading={loading}>Create account</Button>
               </div>
+
+              {/* --- OR Divider + Google Sign-up --- */}
+              <div className="flex items-center gap-4 pt-2">
+                <div className="flex-1 h-px bg-slate-600/50"></div>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">or</span>
+                <div className="flex-1 h-px bg-slate-600/50"></div>
+              </div>
+
+              <GoogleAuthButton />
 
               <p className="text-center text-sm font-medium text-slate-400 pt-3">
                 Already have an account?{" "}

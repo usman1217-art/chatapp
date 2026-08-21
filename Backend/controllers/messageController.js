@@ -91,7 +91,14 @@ const getMessages = async (req, res) => {
     const limit = 30;
     const skip = (page - 1) * limit;
 
-    const messages = await Message.find({ chat: req.params.chatId })
+    // Find messages this user has soft-deleted with "Delete for Me"
+    const deletedEntries = await DeletedMessage.find({ user: req.user.id }).select("message");
+    const deletedIds = deletedEntries.map((d) => d.message);
+
+    const messages = await Message.find({
+      chat: req.params.chatId,
+      _id: { $nin: deletedIds },
+    })
       .populate("sender", "name avatar")
       .populate("replyTo", "text image") // ALWAYS POPULATE THE PARENT LINK
       .sort({ createdAt: -1 })

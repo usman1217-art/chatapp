@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">chatapp</string>
-    <string name="title_activity_main">chatapp</string>
-    <string name="package_name">com.usman1217.chatapp</string>
-    <string name="custom_url_scheme">com.usman1217.chatapp</string>
-</resources>

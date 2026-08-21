@@ -51,7 +51,7 @@ function MessageList({ socket, setMessages }) {
     if (!socket || !selectedChat || !messages.length || !user?._id) return;
 
     const unreadIncomingMessages = messages.filter(
-      (m) => !m.isRead && (m.sender?._id || m.sender) !== user._id
+      (m) => !m.read && (m.sender?._id || m.sender) !== user._id
     );
 
     if (unreadIncomingMessages.length > 0) {
@@ -62,8 +62,8 @@ function MessageList({ socket, setMessages }) {
       
       setMessages((prev) =>
         prev.map((m) =>
-          !m.isRead && (m.sender?._id || m.sender) !== user._id
-            ? { ...m, isRead: true }
+          !m.read && (m.sender?._id || m.sender) !== user._id
+            ? { ...m, read: true }
             : m
         )
       );
@@ -72,26 +72,10 @@ function MessageList({ socket, setMessages }) {
 
   useEffect(() => {
     if (!socket) return;
-    
-    const handleMessageDeleted = ({ messageId }) => {
-      setMessages((prev) =>
-        prev.map((m) => m._id === messageId ? { ...m, text: "This message was deleted", image: null, deletedForEveryone: true } : m)
-      );
-    };
-
-    const handleReceiveMessage = (newMessage) => {
-      const belongsToCurrentChat = selectedChat && (newMessage.chat === selectedChat._id || newMessage.chat?._id === selectedChat._id);
-      if (belongsToCurrentChat) {
-        setMessages((prev) => {
-          if (prev.some((m) => m._id === newMessage._id)) return prev;
-          return [...prev, newMessage];
-        });
-      }
-    };
 
     const handleMessagesRead = ({ chatId }) => {
       if (selectedChat?._id === chatId) {
-        setMessages((prev) => prev.map((m) => (m.sender?._id || m.sender) === user?._id ? { ...m, isRead: true } : m));
+        setMessages((prev) => prev.map((m) => (m.sender?._id || m.sender) === user?._id ? { ...m, read: true } : m));
       }
     };
 
@@ -107,22 +91,12 @@ function MessageList({ socket, setMessages }) {
       }
     };
 
-    socket.on("messageDeleted", handleMessageDeleted);
-    socket.on("receiveMessage", handleReceiveMessage);
-    socket.on("newMessage", handleReceiveMessage);
-    socket.on("getMessage", handleReceiveMessage);
     socket.on("messagesRead", handleMessagesRead);
-    
     socket.on("game-updated", handleGameUpdated); 
     socket.on("game-cancelled", handleGameCancelled); 
 
     return () => {
-      socket.off("messageDeleted", handleMessageDeleted);
-      socket.off("receiveMessage", handleReceiveMessage);
-      socket.off("newMessage", handleReceiveMessage);
-      socket.off("getMessage", handleReceiveMessage);
       socket.off("messagesRead", handleMessagesRead);
-      
       socket.off("game-updated", handleGameUpdated);
       socket.off("game-cancelled", handleGameCancelled); 
     };

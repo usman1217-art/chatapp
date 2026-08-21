@@ -10,16 +10,12 @@ import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 
 import ProtectedRoute from "./components/common/ProtectedRoute";
-import VoiceCallModal from "./components/chat/VoiceCallModal";
 import { useSocket } from "./context/SocketContext";
 import { useAppTheme } from "./context/ThemeContext";
 
 function App() {
   const { theme, colorScheme } = useAppTheme();
   const { socket } = useSocket();
-
-  // --- GLOBAL INCOMING CALL STATE ---
-  const [incomingCall, setIncomingCall] = useState(null);
 
   // --- AUTOMATED BROWSER NOTIFICATION PERMISSION REQUEST ---
   useEffect(() => {
@@ -35,13 +31,12 @@ function App() {
     requestNotificationPermission();
   }, []);
 
-  // --- GLOBAL SOCKET NOTIFICATION LISTENERS ---
+  // --- GLOBAL SOCKET NOTIFICATION LISTENERS (browser alerts only) ---
   useEffect(() => {
     if (!socket) return;
 
-    // 1. Listen for background text messages
-    socket.on("receiveMessage", (message) => {
-      // Trigger a system alert ONLY if the user is currently tabbed out
+    // Background text message browser notification
+    const handleBackgroundMessage = (message) => {
       if (document.hidden && Notification.permission === "granted") {
         const notification = new Notification(`New Message`, {
           body: message.text || "📷 Sent an attachment",
@@ -55,23 +50,14 @@ function App() {
           notification.close();
         };
       }
-    });
+    };
 
-    // 2. Listen for background voice calls
-    socket.on("incoming-call", ({ signal, from, name, avatar }) => {
-      setIncomingCall({
-        signal,
-        caller: {
-          _id: from,
-          name: name,
-          avatar: avatar
-        }
-      });
-      // Trigger a lingering push alert if tabbed out
+    // Background voice call browser notification
+    const handleBackgroundCall = ({ signal, from, name, avatar }) => {
       if (document.hidden && Notification.permission === "granted") {
         const callNotification = new Notification(`📞 Incoming Call`, {
           body: `${name} is calling you...`,
-          requireInteraction: true, // Persists on screen until interacted with
+          requireInteraction: true,
         });
 
         callNotification.onclick = (e) => {
@@ -80,11 +66,14 @@ function App() {
           callNotification.close();
         };
       }
-    });
+    };
+
+    socket.on("receiveMessage", handleBackgroundMessage);
+    socket.on("incoming-call", handleBackgroundCall);
 
     return () => {
-      socket.off("receiveMessage");
-      socket.off("incoming-call");
+      socket.off("receiveMessage", handleBackgroundMessage);
+      socket.off("incoming-call", handleBackgroundCall);
     };
   }, [socket]);
 
@@ -124,15 +113,6 @@ function App() {
         />
       </Routes>
 
-      {/* --- GLOBAL INCOMING VOICE CALL OVERLAY PANEL --- */}
-      {incomingCall && (
-        <VoiceCallModal
-          receiver={incomingCall.caller}
-          isCaller={false}
-          incomingSignal={incomingCall.signal}
-          onClose={() => setIncomingCall(null)}
-        />
-      )}
       </div>
     </div>
   );

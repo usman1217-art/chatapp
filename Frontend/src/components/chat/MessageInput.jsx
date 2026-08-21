@@ -19,7 +19,7 @@ function MessageInput() {
   const { selectedChat, setMessages, replyingTo, setReplyingTo } = useChat();
 
   const receiver = selectedChat?.participants.find(
-    (p) => p._id !== user._id
+    (p) => (p._id || p) !== user._id
   );
 
   // Auto-focus text input when a user initiates a reply

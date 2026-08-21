@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSocket } from "../../context/SocketContext";
 import { useAuth } from "../../context/AuthContext";
-import { AudioToggle } from "@anuradev/capacitor-audio-toggle";
-import { Capacitor } from "@capacitor/core";
 
 function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
   const { socket } = useSocket();
@@ -11,7 +9,6 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
   const [isCallAccepted, setIsCallAccepted] = useState(isCaller);
   const [callStatus, setCallStatus] = useState(isCaller ? "Calling..." : "Incoming Voice Call");
   const [isMuted, setIsMuted] = useState(false);
-  const [isSpeakerphone, setIsSpeakerphone] = useState(false);
   const [imgError, setImgError] = useState(false);
 
   const localStreamRef = useRef(null);
@@ -70,7 +67,6 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
 
-          // Transmit our information across the stream wire layout
           socket.emit("call-user", {
             userToCall: receiverId,
             signalData: offer,
@@ -88,20 +84,12 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
             to: receiverId,
           });
           setCallStatus("Connected");
-          if (Capacitor.isNativePlatform()) {
-             AudioToggle.setSpeakerOn({ speakerOn: false }).catch(() => {});
-             setIsSpeakerphone(false);
-          }
         }
 
         socket.on("call-accepted", async (signal) => {
           setCallStatus("Connected");
           if (pc && pc.signalingState !== "stable") {
             await pc.setRemoteDescription(new RTCSessionDescription(signal));
-          }
-          if (Capacitor.isNativePlatform()) {
-             AudioToggle.setSpeakerOn({ speakerOn: false }).catch(() => {});
-             setIsSpeakerphone(false);
           }
         });
 
@@ -127,10 +115,10 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
     return () => {};
   }, [isCallAccepted]);
 
-  // ✅ FIXED: Isolated cleanup loop breaker logic
+  // Isolated cleanup loop breaker logic
   useEffect(() => {
     const handleRemoteHangup = () => {
-      cleanupAndClose(true); // Close down quietly if the hangup message came from outside
+      cleanupAndClose(true);
     };
 
     socket.on("hangup", handleRemoteHangup);
@@ -141,16 +129,11 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
   }, [receiverId]);
 
   const handleAcceptCall = () => setIsCallAccepted(true);
-  const handleDeclineCall = () => cleanupAndClose(false); // We initiated the cancellation manually
+  const handleDeclineCall = () => cleanupAndClose(false);
 
-  // ✅ FIXED: The boolean guard ensures hangups are never echoed infinitely
   const cleanupAndClose = (isRemote = false) => {
     socket.off("call-accepted");
     socket.off("ice-candidate");
-
-    if (Capacitor.isNativePlatform()) {
-      AudioToggle.reset().catch(() => {});
-    }
 
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => track.stop());
@@ -174,18 +157,6 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
         setIsMuted(!audioTrack.enabled);
-      }
-    }
-  };
-
-  const toggleSpeaker = async () => {
-    const newState = !isSpeakerphone;
-    setIsSpeakerphone(newState);
-    if (Capacitor.isNativePlatform()) {
-      try {
-        await AudioToggle.setSpeakerOn({ speakerOn: newState });
-      } catch (err) {
-        console.error("Failed to toggle speaker:", err);
       }
     }
   };
@@ -242,21 +213,6 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
           ) : (
             <>
               {callStatus === "Connected" && (
-                <>
-                  <button
-                    onClick={toggleSpeaker}
-                    className={`p-4 rounded-full shadow-lg transition-all cursor-pointer ${
-                      isSpeakerphone 
-                        ? "bg-amber-500 text-white hover:bg-amber-600" 
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
-                    }`}
-                    title={isSpeakerphone ? "Switch to Earpiece" : "Switch to Speakerphone"}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                    </svg>
-                  </button>
-
                   <button
                     onClick={toggleMute}
                     className={`p-4 rounded-full shadow-lg transition-all cursor-pointer ${
@@ -270,7 +226,6 @@ function VoiceCallModal({ receiver, onClose, isCaller, incomingSignal }) {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                     </svg>
                   </button>
-                </>
               )}
 
               <button
