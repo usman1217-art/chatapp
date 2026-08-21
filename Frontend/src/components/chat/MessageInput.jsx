@@ -20,7 +20,14 @@ function MessageInput() {
 
   const { socket } = useSocket();
   const { user } = useAuth();
-  const { selectedChat, setMessages, replyingTo, setReplyingTo } = useChat();
+  const { selectedChat, setMessages, replyingTo, setReplyingTo, drafts, setDrafts } = useChat();
+
+  // Load draft when switching chats
+  useEffect(() => {
+    if (selectedChat) {
+      setText(drafts[selectedChat._id] || "");
+    }
+  }, [selectedChat, drafts]);
 
   const receiver = selectedChat?.participants.find(
     (p) => (p._id || p) !== user._id
@@ -35,6 +42,7 @@ function MessageInput() {
 
   const handleTyping = (value) => {
     setText(value);
+    setDrafts((prev) => ({ ...prev, [selectedChat?._id]: value }));
 
     if (!socket || !receiver) return;
 
@@ -123,10 +131,14 @@ function MessageInput() {
   };
 
   const submit = async () => {
-    if (!text.trim() && !image) return;
+    if (text.trim() === "" && !image) return;
 
-    const currentText = text;
+    const currentText = text.trim();
     const currentReply = replyingTo;
+
+    setText("");
+    setDrafts((prev) => ({ ...prev, [selectedChat?._id]: "" }));
+    setImage(null);
     
     // 1. Optimistic UI: Render instantly to screen
     const optimisticMessage = {
@@ -214,7 +226,9 @@ function MessageInput() {
           <div className="fixed md:absolute bottom-20 md:bottom-full left-1/2 md:left-0 -translate-x-1/2 md:translate-x-0 mb-2 z-50 animate-slide-up shadow-2xl rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-slate-900">
             <EmojiPicker 
               onEmojiClick={(e) => {
-                setText(prev => prev + e.emoji);
+                const newText = text + e.emoji;
+                setText(newText);
+                setDrafts((prev) => ({ ...prev, [selectedChat?._id]: newText }));
                 // Only auto-focus on desktop so native mobile keyboards don't pop up and squish the picker
                 if (window.innerWidth >= 768 && textInputRef.current) {
                   textInputRef.current.focus();
