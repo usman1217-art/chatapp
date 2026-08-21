@@ -8,7 +8,7 @@ import EmojiPicker from "emoji-picker-react";
 
 function MessageBubble({ message }) {
   const { user } = useAuth();
-  const { selectedChat, setMessages, setReplyingTo, setActiveLightboxImage } = useChat();
+  const { selectedChat, setMessages, setReplyingTo, setActiveLightboxImage, selectedMessages, setSelectedMessages } = useChat();
   const { socket } = useSocket();
   
   const [isHovered, setIsHovered] = useState(false);
@@ -40,13 +40,30 @@ function MessageBubble({ message }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const longPressTimer = useRef(null);
+
+  const handleLongPress = () => {
+    if (navigator.vibrate) navigator.vibrate(50);
+    setSelectedMessages(prev => {
+      if (!prev.includes(message._id)) {
+        return [...prev, message._id];
+      }
+      return prev;
+    });
+  };
+
   const handleTouchStart = (e) => {
     if (message.deletedForEveryone) return;
     touchStartX.current = e.touches[0].clientX;
     isSwiping.current = true;
+    
+    longPressTimer.current = setTimeout(() => {
+      handleLongPress();
+    }, 1500);
   };
 
   const handleTouchMove = (e) => {
+    clearTimeout(longPressTimer.current);
     if (!isSwiping.current || message.deletedForEveryone) return;
     const currentX = e.touches[0].clientX;
     const diff = currentX - touchStartX.current;
@@ -57,12 +74,36 @@ function MessageBubble({ message }) {
   };
 
   const handleTouchEnd = () => {
+    clearTimeout(longPressTimer.current);
     if (message.deletedForEveryone) return;
     isSwiping.current = false;
     if (swipeX > 40) {
       setReplyingTo(message);
     }
     setSwipeX(0); 
+  };
+
+  const handleMouseDown = () => {
+    if (message.deletedForEveryone) return;
+    longPressTimer.current = setTimeout(() => {
+      handleLongPress();
+    }, 1500);
+  };
+
+  const handleMouseUp = () => clearTimeout(longPressTimer.current);
+  const handleMouseLeave = () => clearTimeout(longPressTimer.current);
+
+  const handleBubbleClick = (e) => {
+    if (selectedMessages.length > 0) {
+      e.stopPropagation();
+      setSelectedMessages(prev => {
+        if (prev.includes(message._id)) {
+          return prev.filter(id => id !== message._id);
+        } else {
+          return [...prev, message._id];
+        }
+      });
+    }
   };
 
   const handleDeleteForMe = async () => {
@@ -166,10 +207,12 @@ function MessageBubble({ message }) {
     }
   };
 
+  const isSelected = selectedMessages.includes(message._id);
+
   return (
     <div 
       id={`message-${message._id}`} 
-      className={`flex ${own ? "justify-end" : "justify-start"} px-4 py-1.5 relative rounded-2xl transition-colors duration-700`}
+      className={`flex ${own ? "justify-end" : "justify-start"} px-4 py-1.5 relative transition-colors duration-700 ${isSelected ? "bg-emerald-500/10 dark:bg-emerald-500/20" : ""}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -185,10 +228,13 @@ function MessageBubble({ message }) {
       )}
 
       <div
-        onClick={() => setShowMenu(!showMenu)}
+        onClick={handleBubbleClick}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
         style={{ transform: `translateX(${swipeX}px)` }}
         className={`max-w-[85%] md:max-w-[70%] rounded-3xl px-5 py-3.5 shadow-lg flex flex-col relative z-10 ${isSwiping.current ? 'duration-0' : 'duration-300'} ${
           own
@@ -196,7 +242,11 @@ function MessageBubble({ message }) {
             : "glass border-white/10 text-slate-100 rounded-bl-sm font-medium"
         }`}
       >
-        {!message.deletedForEveryone && (isHovered || showMenu) && (
+        {isSelected && (
+          <div className="absolute inset-0 bg-emerald-500/20 rounded-3xl pointer-events-none z-20 mix-blend-overlay"></div>
+        )}
+
+        {!message.deletedForEveryone && selectedMessages.length === 1 && isSelected && (
           <div className={`absolute -top-10 z-30 flex items-center gap-1 ${own ? 'right-0' : 'left-0'}`}>
             <div className="flex items-center gap-1 bg-black/30 dark:bg-black/60 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/10">
               {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (

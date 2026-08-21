@@ -19,6 +19,7 @@ export const ChatProvider = ({ children }) => {
   const [replyingTo, setReplyingTo] = useState(null);
   const [viewingProfile, setViewingProfile] = useState(false);
   const [activeLightboxImage, setActiveLightboxImage] = useState(null);
+  const [selectedMessages, setSelectedMessages] = useState([]);
   // ------------------------------------
 
   useEffect(() => {
@@ -29,6 +30,7 @@ export const ChatProvider = ({ children }) => {
     // Reset auxiliary presentation layers whenever a user switches chats
     setReplyingTo(null);
     setViewingProfile(false);
+    setSelectedMessages([]);
   }, [selectedChat]);
 
   const loadMessages = async () => {
@@ -58,6 +60,8 @@ export const ChatProvider = ({ children }) => {
         setViewingProfile,
         activeLightboxImage,
         setActiveLightboxImage,
+        selectedMessages,
+        setSelectedMessages,
       }}
     >
       {children}

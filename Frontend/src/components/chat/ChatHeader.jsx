@@ -4,20 +4,108 @@ import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
 
 function ChatHeader({ onStartCall }) {
-  const { selectedChat, setSelectedChat, setChats } = useChat();
+  const { selectedChat, setSelectedChat, setChats, messages, setMessages, selectedMessages, setSelectedMessages } = useChat();
   const { user } = useAuth();
   const { onlineUsers, isTyping, socket } = useSocket();
   
   // 👈 ADDED: State to control the game selection dropdown
   const [showGameMenu, setShowGameMenu] = useState(false);
+  const [showBulkDeleteMenu, setShowBulkDeleteMenu] = useState(false);
 
   if (!selectedChat) return null;
 
   const otherUser = selectedChat.participants.find(
-    (participant) => (participant._id || participant) !== (user?._id || user)
+    (participant) => participant && (participant._id || participant) !== (user?._id || user)
   );
 
   const isOnline = onlineUsers.includes(otherUser?._id);
+
+  // Bulk Deletion Logic
+  const selectedMsgObjects = messages?.filter(m => selectedMessages?.includes(m._id)) || [];
+  const canDeleteForEveryone = selectedMsgObjects.length > 0 && selectedMsgObjects.every(m => {
+    const senderId = m.sender?._id || m.sender;
+    const own = senderId === user?._id;
+    const diff = (Date.now() - new Date(m.createdAt).getTime()) / 1000 / 60;
+    return own && diff <= 15;
+  });
+
+  const handleBulkDeleteForMe = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      await Promise.all(selectedMessages.map(messageId => 
+        fetch(`${import.meta.env.VITE_API_URL}/messages/delete-me`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ messageId }),
+        })
+      ));
+
+      setMessages(prev => prev.filter(m => !selectedMessages.includes(m._id)));
+      setSelectedMessages([]);
+      setShowBulkDeleteMenu(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleBulkDeleteForEveryone = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      await Promise.all(selectedMessages.map(messageId => 
+        fetch(`${import.meta.env.VITE_API_URL}/messages/delete-everyone`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ messageId }),
+        })
+      ));
+
+      setMessages(prev => prev.map(m => 
+        selectedMessages.includes(m._id)
+          ? { ...m, text: "This message was deleted", image: null, fileUrl: null, deletedForEveryone: true }
+          : m
+      ));
+
+      if (socket && selectedChat) {
+        const receiver = selectedChat.participants.find(p => p && (p._id || p) !== user._id);
+        if (receiver) {
+          selectedMessages.forEach(messageId => {
+            socket.emit("deleteMessage", { messageId, receiverId: receiver._id || receiver });
+          });
+        }
+      }
+      setSelectedMessages([]);
+      setShowBulkDeleteMenu(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Selection Mode Header Return
+  if (selectedMessages?.length > 0) {
+    return (
+      <div className="h-16 md:h-20 shrink-0 flex items-center justify-between px-4 sm:px-6 bg-emerald-600 dark:bg-emerald-700 text-white shadow-md z-20 transition-colors animate-fade-in">
+        <div className="flex items-center gap-4">
+          <button onClick={() => { setSelectedMessages([]); setShowBulkDeleteMenu(false); }} className="p-2 hover:bg-white/20 rounded-full transition-colors cursor-pointer text-white">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+          <span className="font-bold text-lg">{selectedMessages.length} Selected</span>
+        </div>
+        <div className="flex items-center gap-2 relative">
+           <button onClick={() => setShowBulkDeleteMenu(!showBulkDeleteMenu)} className="p-2 hover:bg-white/20 rounded-full transition-colors cursor-pointer text-white">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+           </button>
+           {showBulkDeleteMenu && (
+             <div className="absolute top-14 right-0 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-xl shadow-xl w-48 overflow-hidden z-50 py-2 border border-slate-200 dark:border-slate-700 animate-slide-up">
+               <button onClick={handleBulkDeleteForMe} className="w-full text-left px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium transition-colors cursor-pointer">Delete for me</button>
+               {canDeleteForEveryone && (
+                 <button onClick={handleBulkDeleteForEveryone} className="w-full text-left px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium text-red-500 hover:text-red-600 dark:text-red-400 transition-colors cursor-pointer">Delete for everyone</button>
+               )}
+             </div>
+           )}
+        </div>
+      </div>
+    );
+  }
 
   const handleDeleteChat = async () => {
     const chatId = selectedChat._id || selectedChat.id;
