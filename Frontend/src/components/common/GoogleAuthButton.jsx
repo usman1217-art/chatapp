@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { googleLogin } from "../../services/authApi";
 import { useAuth } from "../../context/AuthContext";
 
-function GoogleAuthButton() {
+function GoogleAuthButton({ text }) {
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -41,13 +41,14 @@ function GoogleAuthButton() {
   }
 
   return (
-    <div className="flex justify-center [&>div]:w-full">
+    <div className="flex justify-center w-full">
       <GoogleLogin
         onSuccess={handleSuccess}
         onError={() => toast.error("Google sign-in failed")}
         theme="filled_black"
         shape="pill"
-        width="100%"
+        width="360"
+        text={text || "signin_with"}
       />
     </div>
   );

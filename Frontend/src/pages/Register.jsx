@@ -126,7 +126,7 @@ function Register() {
                 <div className="flex-1 h-px bg-slate-600/50"></div>
               </div>
 
-              <GoogleAuthButton />
+              <GoogleAuthButton text="signup_with" />
 
               <p className="text-center text-sm font-medium text-slate-400 pt-3">
                 Already have an account?{" "}
