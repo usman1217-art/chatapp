@@ -4,7 +4,7 @@ import { useChat } from "../../context/ChatContext";
 import { useSocket } from "../../context/SocketContext";
 import { useAuth } from "../../context/AuthContext";
 import EmojiPicker from "emoji-picker-react";
-import { FaPaperclip, FaRegSmile, FaFileAlt } from "react-icons/fa";
+import { FaPaperclip, FaRegSmile, FaFileAlt, FaKeyboard } from "react-icons/fa";
 
 function MessageInput() {
   const [text, setText] = useState("");
@@ -215,7 +215,10 @@ function MessageInput() {
             <EmojiPicker 
               onEmojiClick={(e) => {
                 setText(prev => prev + e.emoji);
-                if (textInputRef.current) textInputRef.current.focus();
+                // Only auto-focus on desktop so native mobile keyboards don't pop up and squish the picker
+                if (window.innerWidth >= 768 && textInputRef.current) {
+                  textInputRef.current.focus();
+                }
               }} 
               theme={document.documentElement.classList.contains("dark") ? "dark" : "light"}
               width={window.innerWidth < 768 ? window.innerWidth * 0.9 : 350}
@@ -265,11 +268,18 @@ function MessageInput() {
         
         {/* Emoji Toggle Button */}
         <button
-          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          onClick={() => {
+            const willBeShown = !showEmojiPicker;
+            setShowEmojiPicker(willBeShown);
+            // If we are switching back to keyboard, focus the input to bring it up automatically
+            if (!willBeShown && textInputRef.current) {
+              textInputRef.current.focus();
+            }
+          }}
           className={`w-12 h-12 rounded-full transition-all shrink-0 flex items-center justify-center shadow-sm border ${showEmojiPicker ? "bg-amber-500 border-amber-500 text-white" : "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"}`}
-          title="Emoji"
+          title={showEmojiPicker ? "Keyboard" : "Emoji"}
         >
-          <FaRegSmile className="w-5 h-5 sm:w-6 sm:h-6" />
+          {showEmojiPicker ? <FaKeyboard className="w-5 h-5 sm:w-6 sm:h-6" /> : <FaRegSmile className="w-5 h-5 sm:w-6 sm:h-6" />}
         </button>
 
         {/* Hidden File Input */}
