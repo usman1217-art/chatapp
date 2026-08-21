@@ -206,15 +206,23 @@ function MessageInput() {
 
       {/* Emoji Picker Overlay */}
       {showEmojiPicker && (
-        <div className="absolute bottom-full left-0 mb-2 z-50 animate-slide-up shadow-2xl rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
-          <EmojiPicker 
-            onEmojiClick={(e) => {
-              setText(prev => prev + e.emoji);
-              if (textInputRef.current) textInputRef.current.focus();
-            }} 
-            theme={document.documentElement.classList.contains("dark") ? "dark" : "light"}
-          />
-        </div>
+        <>
+          <div 
+            className="fixed inset-0 z-40 bg-black/50 md:hidden animate-fade-in" 
+            onClick={() => setShowEmojiPicker(false)}
+          ></div>
+          <div className="fixed md:absolute bottom-20 md:bottom-full left-1/2 md:left-0 -translate-x-1/2 md:translate-x-0 mb-2 z-50 animate-slide-up shadow-2xl rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-slate-900">
+            <EmojiPicker 
+              onEmojiClick={(e) => {
+                setText(prev => prev + e.emoji);
+                if (textInputRef.current) textInputRef.current.focus();
+              }} 
+              theme={document.documentElement.classList.contains("dark") ? "dark" : "light"}
+              width={window.innerWidth < 768 ? window.innerWidth * 0.9 : 350}
+              height={window.innerWidth < 768 ? 400 : 450}
+            />
+          </div>
+        </>
       )}
 
       {/* Tiny Image Preview Thumbnail */}

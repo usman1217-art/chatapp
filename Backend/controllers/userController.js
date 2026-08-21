@@ -291,11 +291,25 @@ const DeletedAccount = require("../models/DeletedAccount");
 
 const deleteAccount = async (req, res) => {
   try {
+    const { password } = req.body;
     const userId = req.user.id;
     const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.password) {
+      return res.status(400).json({ message: "You must set a password in your Security settings before you can delete your account." });
+    }
+
+    if (!password) {
+      return res.status(400).json({ message: "Password is required to delete your account." });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Incorrect password" });
     }
 
     // Archive user

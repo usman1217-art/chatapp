@@ -185,6 +185,7 @@ function MessageBubble({ message }) {
       )}
 
       <div
+        onClick={() => setShowMenu(!showMenu)}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -196,8 +197,8 @@ function MessageBubble({ message }) {
         }`}
       >
         {!message.deletedForEveryone && (isHovered || showMenu) && (
-          <div className="absolute top-2 right-2 z-30 flex items-center gap-1">
-            <div className="flex items-center gap-1 bg-black/30 dark:bg-black/60 backdrop-blur-md rounded-full p-1 shadow-lg">
+          <div className={`absolute -top-10 z-30 flex items-center gap-1 ${own ? 'right-0' : 'left-0'}`}>
+            <div className="flex items-center gap-1 bg-black/30 dark:bg-black/60 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/10">
               {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
                 <button
                   key={emoji}
@@ -216,11 +217,21 @@ function MessageBubble({ message }) {
                   <FaRegSmile className="w-3.5 h-3.5" />
                 </button>
                 {showEmojiPicker && (
-                  <div className="absolute top-full right-0 mt-2 z-50 shadow-2xl rounded-2xl overflow-hidden animate-slide-up">
-                    <EmojiPicker
-                      onEmojiClick={(e) => handleReact(e.emoji)}
-                      theme={document.documentElement.classList.contains("dark") ? "dark" : "light"}
-                    />
+                  <div 
+                    className="fixed inset-0 md:absolute md:inset-auto md:top-full mt-2 z-[9999] md:z-50 flex items-center justify-center md:block bg-black/50 md:bg-transparent backdrop-blur-sm md:backdrop-blur-none animate-fade-in"
+                    onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(false); }}
+                  >
+                    <div 
+                      className={`shadow-2xl rounded-2xl overflow-hidden animate-slide-up ${own ? 'md:right-0' : 'md:-left-24'} max-h-[80vh] md:max-h-none`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <EmojiPicker
+                        onEmojiClick={(e) => handleReact(e.emoji)}
+                        theme={document.documentElement.classList.contains("dark") ? "dark" : "light"}
+                        width={window.innerWidth < 768 ? window.innerWidth * 0.9 : 350}
+                        height={window.innerWidth < 768 ? 400 : 450}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
