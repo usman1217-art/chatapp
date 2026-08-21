@@ -21,6 +21,7 @@ const {
   addFriend, 
   removeFriend,
   getFriendRequests,
+  acceptFriendRequest,
   sendFriendRequest,
   deleteAccount
 } = require("../controllers/userController");
